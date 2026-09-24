@@ -1,0 +1,20 @@
+# Static analysis configuration for the CDS Team app.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # Treat a few common mistakes as hard failures rather than hints.
+    unused_import: error
+    unused_local_variable: error
+
+linter:
+  rules:
+    # Services and providers take a public named parameter and assign it to a
+    # private field. Dart does not allow a private named parameter, so an
+    # initializing formal is not an option for this (deliberate) pattern.
+    prefer_initializing_formals: false
+
+    # Extra rules worth having in an app that talks to a legacy-shaped API.
+    always_declare_return_types: true
+    prefer_final_locals: true
+    unawaited_futures: true

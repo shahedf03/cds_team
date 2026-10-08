@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/auth/auth_user.dart';
+import '../utils/api_formats.dart';
 
 /// Non-sensitive session details (name, position, id). The token itself
 /// lives in [TokenStore] — never here.
@@ -10,9 +12,12 @@ class SessionStore {
   static const String _userId = 'cds_user_id';
   static const String _userName = 'cds_user_name';
   static const String _userPosition = 'cds_user_position';
+  // Legacy: the old §7 "since this id" cursor. `autoId` turned out to be a
+  // dismiss flag, so the value is no longer read; only cleared on sign-out.
   static const String _lastNotificationId = 'cds_last_notification_id';
   static const String _playerId = 'cds_player_id';
   static const String _deviceId = 'cds_device_id';
+  static const String _pendingPunches = 'cds_pending_punches';
 
   Future<void> saveUser(AuthUser user) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -40,15 +45,27 @@ class SessionStore {
     await prefs.remove(_lastNotificationId);
   }
 
-  /// Cursor for incremental notification polling (§7 `autoId`).
-  Future<String> readLastNotificationId() async {
+  /// Verified punches that couldn't reach the server (offline), oldest
+  /// first, each the JSON body of `mobile-punch`. Kept across sign-outs: a
+  /// verified punch is a real attendance event and must not be lost.
+  Future<List<Map<String, dynamic>>> readPendingPunches() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_lastNotificationId) ?? '0';
+    final String? raw = prefs.getString(_pendingPunches);
+    if (raw == null || raw.isEmpty) return <Map<String, dynamic>>[];
+    try {
+      return Json.objects(jsonDecode(raw));
+    } on FormatException {
+      return <Map<String, dynamic>>[];
+    }
   }
 
-  Future<void> saveLastNotificationId(String autoId) async {
+  Future<void> savePendingPunches(List<Map<String, dynamic>> punches) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_lastNotificationId, autoId);
+    if (punches.isEmpty) {
+      await prefs.remove(_pendingPunches);
+    } else {
+      await prefs.setString(_pendingPunches, jsonEncode(punches));
+    }
   }
 
   /// Stable per-install id sent as `deviceId` on mobile check-in (§10).
@@ -68,8 +85,8 @@ class SessionStore {
     return generated;
   }
 
-  /// Push-notification player id carried over from the legacy `player_id`
-  /// param. `"0"` when the device hasn't registered for push yet.
+  /// Last known OneSignal subscription id, sent as `playerId` on login.
+  /// `"0"` when the device hasn't registered for push yet.
   Future<String> readPlayerId() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString(_playerId) ?? '0';

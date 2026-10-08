@@ -1,7 +1,7 @@
 import '../core/utils/api_formats.dart';
 import 'transportation.dart';
 
-/// `GET /api/clients` → `[{ "id": "10", "name": "سامسونج" }]`
+/// `GET /api/clients` → `[{ "id": "10", "name": "Samsung" }]`
 class Client {
   const Client({required this.id, required this.name});
 

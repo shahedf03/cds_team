@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../l10n/gen/app_localizations.dart';
+import '../../models/client.dart';
 
 /// The warm gradient backdrop every screen sits on.
 class AppBackground extends StatelessWidget {
@@ -70,6 +72,7 @@ class SoftIconButton extends StatelessWidget {
     this.onPressed,
     this.tooltip,
     this.showDot = false,
+    this.badgeCount = 0,
     this.size = 34,
     this.color,
   });
@@ -78,6 +81,9 @@ class SoftIconButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final String? tooltip;
   final bool showDot;
+
+  /// Number bubble in the corner; `0` hides it. Takes over from [showDot].
+  final int badgeCount;
   final double size;
   final Color? color;
 
@@ -96,7 +102,32 @@ class SoftIconButton extends StatelessWidget {
             alignment: Alignment.center,
             children: <Widget>[
               Icon(icon, size: 17, color: color ?? AppColors.ink),
-              if (showDot)
+              if (badgeCount > 0)
+                Positioned(
+                  right: 2,
+                  top: 2,
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 15),
+                    height: 15,
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.red,
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(color: AppColors.cream, width: 1.5),
+                    ),
+                    child: Text(
+                      badgeCount > 99 ? '99+' : '$badgeCount',
+                      style: const TextStyle(
+                        fontSize: 8,
+                        height: 1,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                )
+              else if (showDot)
                 Positioned(
                   right: 7,
                   top: 6,
@@ -444,3 +475,221 @@ void showApiSnack(
       ),
     );
 }
+
+/// Removable pill for a picked client — Transportation's "+ Add Client"
+/// (§4) and Leave's "work leaving" client field (§F) both show their picks
+/// this way.
+class ClientChip extends StatelessWidget {
+  const ClientChip({super.key, required this.name, required this.onRemove});
+
+  final String name;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(11, 7, 5, 7),
+      decoration: BoxDecoration(
+        color: AppColors.blueTint,
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            name,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.blue,
+            ),
+          ),
+          const SizedBox(width: 4),
+          InkWell(
+            onTap: onRemove,
+            customBorder: const CircleBorder(),
+            child: const Padding(
+              padding: EdgeInsets.all(3),
+              child: Icon(Icons.close_rounded, size: 13, color: AppColors.blue),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Searchable list of `GET /api/clients` (§5), shared by Transportation's
+/// "+ Add Client" (§4) and Leave's "work leaving" client field (§F — part of
+/// the 2026-10-05 update). Provider-agnostic: the caller supplies the
+/// already-loaded [clients]/[isLoading] (typically via a `Consumer` so the
+/// sheet still reacts to a retry while it's open) rather than this widget
+/// reading a specific provider itself.
+class ClientPickerSheet extends StatefulWidget {
+  const ClientPickerSheet({
+    super.key,
+    required this.clients,
+    required this.isLoading,
+    required this.selectedIds,
+    required this.onRetry,
+  });
+
+  final List<Client> clients;
+  final bool isLoading;
+  final Set<String> selectedIds;
+  final VoidCallback onRetry;
+
+  @override
+  State<ClientPickerSheet> createState() => _ClientPickerSheetState();
+}
+
+class _ClientPickerSheetState extends State<ClientPickerSheet> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+
+    final List<Client> available = widget.clients
+        .where((Client c) => !widget.selectedIds.contains(c.id))
+        .where(
+          (Client c) =>
+              _query.isEmpty ||
+              c.name.toLowerCase().contains(_query.toLowerCase()),
+        )
+        .toList();
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: Column(
+          children: <Widget>[
+            const SizedBox(height: 12),
+            Container(
+              width: 38,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.line,
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    t.editorAddClientTitle,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    autofocus: true,
+                    onChanged: (String v) => setState(() => _query = v),
+                    style: const TextStyle(fontSize: 13),
+                    decoration: _pickerFieldDecoration(
+                      label: t.editorSearchClients,
+                      icon: Icons.search_rounded,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: widget.isLoading && widget.clients.isEmpty
+                  ? const Center(
+                      child: CircularProgressIndicator(color: AppColors.green),
+                    )
+                  : available.isEmpty
+                  ? StateMessage(
+                      icon: Icons.business_outlined,
+                      tone: ToneColor.blue,
+                      title: widget.clients.isEmpty
+                          ? t.editorNoClientsAvailable
+                          : t.editorNoMatches,
+                      message: widget.clients.isEmpty
+                          ? t.editorClientListFailed
+                          : t.editorTryDifferentSearch,
+                      actionLabel: widget.clients.isEmpty ? t.commonRetry : null,
+                      onAction: widget.onRetry,
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      itemCount: available.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 6),
+                      itemBuilder: (BuildContext context, int index) {
+                        final Client client = available[index];
+                        return GlassCard(
+                          radius: 14,
+                          color: AppColors.cardSoft,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 13,
+                          ),
+                          onTap: () => Navigator.of(context).pop(client),
+                          child: Row(
+                            children: <Widget>[
+                              const IconWell(
+                                icon: Icons.business_outlined,
+                                tone: ToneColor.blue,
+                                size: 30,
+                              ),
+                              const SizedBox(width: 11),
+                              Expanded(
+                                child: Text(
+                                  client.name,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.ink,
+                                  ),
+                                ),
+                              ),
+                              const Icon(
+                                Icons.add_circle_outline_rounded,
+                                size: 18,
+                                color: AppColors.green,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+InputDecoration _pickerFieldDecoration({
+  required String label,
+  required IconData icon,
+}) => InputDecoration(
+  labelText: label,
+  labelStyle: const TextStyle(fontSize: 12, color: AppColors.muted),
+  prefixIcon: Icon(icon, size: 18, color: AppColors.muted),
+  filled: true,
+  fillColor: const Color(0x66FFFFFF),
+  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+  border: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(14),
+    borderSide: const BorderSide(color: AppColors.line),
+  ),
+  enabledBorder: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(14),
+    borderSide: const BorderSide(color: AppColors.line),
+  ),
+  focusedBorder: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(14),
+    borderSide: const BorderSide(color: AppColors.green, width: 1.4),
+  ),
+);

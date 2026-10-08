@@ -4,16 +4,23 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-	<!-- Face ID / Touch ID prompt for the check-in button (§10) -->
+	<!-- Face ID prompt for the check-in button (§10). Touch ID needs no
+	     usage string of its own — iOS only requires one for Face ID. -->
 	<key>NSFaceIDUsageDescription</key>
-	<string>CDS Team uses Face ID or Touch ID to confirm it is you before recording your attendance check-in.</string>
+	<string>CDS Team uses Face ID to confirm it's you before recording your attendance check-in.</string>
 	<!-- GPS captured at the moment of a successful biometric match -->
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>CDS Team records your location when you check in, so your attendance can be matched to your work site.</string>
+	<string>CDS Team uses your location at the moment you check in or out, so your attendance can be matched to your work site.</string>
+	<!-- Sick-leave attachment: "Take a photo" (§9) -->
+	<key>NSCameraUsageDescription</key>
+	<string>CDS Team uses the camera so you can take a photo of a medical report to attach to a leave request.</string>
+	<!-- Sick-leave attachment: "Choose from gallery" (§9) -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>CDS Team accesses your photo library so you can attach an existing photo of a medical report to a leave request.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Cds Team</string>
+	<string>CDS Team</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -55,6 +62,32 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Lets a OneSignal push update silently (badge/content) without
+	     needing the app in the foreground. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<!-- CdsTeam_Api (see AppConfig.apiBaseUrl) has no TLS certificate yet, so
+	     iOS blocks it by default (ATS). This exception opens plain HTTP for
+	     exactly that host — never a blanket NSAllowsArbitraryLoads — so
+	     nothing else the app talks to loses ATS protection. Remove this
+	     block the day the API moves to https://. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>olives.cds.jo</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

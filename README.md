@@ -18,11 +18,16 @@ flutter run --dart-define=API_BASE_URL=http://192.168.1.50:5170
 flutter build apk --release --dart-define=API_BASE_URL=https://api.example.com
 ```
 
-It defaults to `http://localhost:5170` if the define is omitted. Swagger lives
-at `<base>/swagger`.
+It defaults to `http://cloud.cdsjo.com:8081/CdsTeam_Api/` (the production
+host) if the define is omitted. Swagger lives at `<base>/swagger`.
 
-Debug builds allow cleartext HTTP on Android so the local API works over plain
-`http`. Release builds do not.
+Debug builds allow cleartext HTTP on Android so a local API works over plain
+`http`. Release builds don't — except for `cloud.cdsjo.com`, which has no TLS
+certificate yet and is explicitly allowed by
+`android/app/src/main/res/xml/network_security_config.xml` (Android) and the
+`NSAppTransportSecurity` exception in `ios/Runner/Info.plist` (iOS). Both are
+scoped to that one host, not a blanket exception — move the default back to
+`https://` and delete both the day the API gets a certificate.
 
 ---
 

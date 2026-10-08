@@ -1,15 +1,41 @@
 import 'package:flutter/material.dart';
 
+import '../models/team.dart';
 import '../models/transportation.dart';
+import '../services/push_service.dart';
 import '../views/screens/attendance_screen.dart';
 import '../views/screens/home_shell.dart';
+import '../views/screens/leave_detail_screen.dart';
 import '../views/screens/leave_screen.dart';
 import '../views/screens/login_screen.dart';
+import '../views/screens/member_profile_screen.dart';
 import '../views/screens/notifications_screen.dart';
 import '../views/screens/profile_screen.dart';
 import '../views/screens/tasks_screen.dart';
+import '../views/screens/team_leave_screen.dart';
 import '../views/screens/transportation_editor_screen.dart';
 import '../views/screens/transportation_screen.dart';
+
+/// Where a tapped push or notification row lands — shared by both (2026-10-07:
+/// "they hold the same values, so handle both places with one function").
+/// `leave_request`/`leave_forwarded`/`leave_decision` open that request's
+/// detail; `leave_withdrawn` has nothing to open (the request was deleted),
+/// just the team list; `task_done`/`task_new` open that task.
+void openPushTarget(PushEvent event) {
+  switch (event.kind) {
+    case PushKind.leaveRequest:
+    case PushKind.leaveForwarded:
+    case PushKind.leaveDecision:
+      AppRoutes.openLeaveDetail(event.linkId);
+    case PushKind.leaveWithdrawn:
+      AppRoutes.open(AppRoutes.leaveTeam);
+    case PushKind.taskDone:
+    case PushKind.taskNew:
+      AppRoutes.openTask(event.linkId);
+    case PushKind.unknown:
+      AppRoutes.open(AppRoutes.notifications);
+  }
+}
 
 class AppRoutes {
   const AppRoutes._();
@@ -25,6 +51,12 @@ class AppRoutes {
   static const String transportation = '/transportation';
   static const String transportationEditor = '/transportation/edit';
   static const String leave = '/leave';
+  static const String leaveTeam = '/leave/team';
+  /// One request's detail/timeline; takes its `transNo` (`String`) as
+  /// arguments.
+  static const String leaveDetail = '/leave/detail';
+  /// A team member's read-only profile; takes a [TeamMember] as arguments.
+  static const String teamMember = '/team/member';
   static const String notifications = '/notifications';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
@@ -36,7 +68,10 @@ class AppRoutes {
       case attendance:
         return _slide(const AttendanceScreen(), settings);
       case tasks:
-        return _slide(const TasksScreen(), settings);
+        return _slide(
+          TasksScreen(initialTaskId: settings.arguments as String?),
+          settings,
+        );
       case profile:
         return _slide(const ProfileScreen(), settings);
       case transportation:
@@ -52,6 +87,16 @@ class AppRoutes {
         );
       case leave:
         return _slide(const LeaveScreen(), settings);
+      case leaveTeam:
+        return _slide(const TeamLeaveScreen(), settings);
+      case leaveDetail:
+        final Object? transNo = settings.arguments;
+        if (transNo is! String || transNo.isEmpty) return null;
+        return _slide(LeaveDetailScreen(transNo: transNo), settings);
+      case teamMember:
+        final Object? member = settings.arguments;
+        if (member is! TeamMember) return null;
+        return _slide(MemberProfileScreen(member: member), settings);
       case notifications:
         return _slide(const NotificationsScreen(), settings);
       default:
@@ -65,6 +110,44 @@ class AppRoutes {
     final NavigatorState? nav = navigatorKey.currentState;
     if (nav == null) return;
     nav.pushNamedAndRemoveUntil(login, (Route<dynamic> _) => false);
+  }
+
+  /// Opens [name] on top of whatever is showing, from outside any widget
+  /// (push taps). If that screen is already on top, it isn't stacked twice.
+  static void open(String name) {
+    final NavigatorState? nav = navigatorKey.currentState;
+    if (nav == null) return;
+    String? top;
+    nav.popUntil((Route<dynamic> route) {
+      top = route.settings.name;
+      return true;
+    });
+    if (top == name) return;
+    nav.pushNamed(name);
+  }
+
+  /// A `task_done`/`task_new` push — opens the Tasks screen with that task's
+  /// details sheet, or the plain list when [taskId] is missing (an older
+  /// push build).
+  static void openTask(String? taskId) {
+    final NavigatorState? nav = navigatorKey.currentState;
+    if (nav == null) return;
+    nav.popUntil((Route<dynamic> route) => route.isFirst);
+    nav.pushNamed(tasks, arguments: taskId);
+  }
+
+  /// A `leave_request`/`leave_forwarded`/`leave_decision` push or
+  /// notification tap — opens that request's detail, or the team inbox when
+  /// [transNo] is missing (an older push build, or a dismissed row).
+  static void openLeaveDetail(String? transNo) {
+    final NavigatorState? nav = navigatorKey.currentState;
+    if (nav == null) return;
+    if (transNo == null || transNo.isEmpty) {
+      open(leaveTeam);
+      return;
+    }
+    nav.popUntil((Route<dynamic> route) => route.isFirst);
+    nav.pushNamed(leaveDetail, arguments: transNo);
   }
 
   static void toHome() {

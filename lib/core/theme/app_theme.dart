@@ -9,7 +9,7 @@ class AppTheme {
     final ColorScheme scheme = ColorScheme.fromSeed(
       seedColor: AppColors.green,
       primary: AppColors.green,
-      secondary: AppColors.amber,
+      secondary: AppColors.ink,
       error: AppColors.red,
       surface: AppColors.cream,
     );

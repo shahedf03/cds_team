@@ -123,11 +123,28 @@ class ApiClient {
       final Response<T> response = await call();
       return response.data as T;
     } on DioException catch (e) {
-      throw ApiException.fromDio(e);
+      if (!_isNetworkFailure(e)) throw ApiException.fromDio(e);
+      // Couldn't even reach the host — swap to the other known base URL
+      // (see AppConfig.apiFallbackBaseUrl) and give it one try before
+      // giving up. Stays on whichever one works for the next call.
+      _dio.options.baseUrl = _dio.options.baseUrl == AppConfig.apiBaseUrl
+          ? AppConfig.apiFallbackBaseUrl
+          : AppConfig.apiBaseUrl;
+      try {
+        final Response<T> response = await call();
+        return response.data as T;
+      } on DioException catch (e2) {
+        throw ApiException.fromDio(e2);
+      }
     } catch (e) {
       throw ApiException(message: e.toString());
     }
   }
+
+  static bool _isNetworkFailure(DioException e) =>
+      e.type == DioExceptionType.connectionTimeout ||
+      e.type == DioExceptionType.connectionError ||
+      e.type == DioExceptionType.unknown;
 
   /// GET returning raw bytes (e.g. `application/pdf`).
   Future<Uint8List> getBytes(

@@ -22,9 +22,10 @@ class ApiFormats {
 
   static String toLeaveDateTime(DateTime value) => leaveDateTime.format(value);
 
-  /// Timestamps for the mobile check-in are ISO 8601 in UTC (`...Z`).
-  static String toIsoUtc(DateTime value) =>
-      '${value.toUtc().toIso8601String().split('.').first}Z';
+  /// Timestamps for the mobile check-in are sent exactly as captured on the
+  /// device, no zone conversion: `2026-09-20T09:15:00`.
+  static String toIsoLocal(DateTime value) =>
+      value.toIso8601String().split('.').first;
 
   /// The API returns `fromDateTime` as `dd-MM-yyyy HH:mm` but dates elsewhere
   /// as ISO. Try both before giving up.
@@ -91,6 +92,13 @@ class Json {
 
   static DateTime? date(dynamic value) =>
       ApiFormats.tryParse(value?.toString());
+
+  /// Punch times (`checkInAt`, `lastPunchAt`, `firstPunchAt`, `startAt`,
+  /// `endAt`, ...) are real UTC with a trailing `Z` — confirmed consistent
+  /// across every endpoint as of the 2026-09-30 API update. Convert to the
+  /// device's local time before display; printing the raw UTC digits is
+  /// exactly the "punch shows 3 hours early" bug (Amman is UTC+3).
+  static DateTime? utcToLocal(dynamic value) => date(value)?.toLocal();
 
   static List<Map<String, dynamic>> objects(dynamic value) {
     if (value is! List) return const <Map<String, dynamic>>[];

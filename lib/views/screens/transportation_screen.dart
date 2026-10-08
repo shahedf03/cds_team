@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/api_formats.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/transportation.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/loadable.dart';
@@ -69,13 +70,14 @@ class _TransportationScreenState extends State<TransportationScreen> {
       arguments: entry,
     );
     if (saved == true && mounted) {
-      showApiSnack(context, 'Entry saved.', isError: false);
+      showApiSnack(context, AppLocalizations.of(context).transportationEntrySaved, isError: false);
     }
   }
 
   /// "Open": fetches the PDF for the open date window and shows it in-app;
   /// Print and Share live inside the viewer.
   Future<void> _openReport() async {
+    final AppLocalizations t = AppLocalizations.of(context);
     final AuthProvider auth = context.read<AuthProvider>();
     if (auth.user == null) return;
 
@@ -88,7 +90,7 @@ class _TransportationScreenState extends State<TransportationScreen> {
 
     if (!mounted) return;
     if (bytes == null) {
-      showApiSnack(context, provider.error ?? 'Could not generate the report.');
+      showApiSnack(context, provider.error ?? t.transportationCouldNotGenerateReport);
       return;
     }
 
@@ -97,18 +99,19 @@ class _TransportationScreenState extends State<TransportationScreen> {
         '_${ApiFormats.toQueryDate(provider.range.to)}.pdf';
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => _ReportViewer(bytes: bytes, filename: filename),
+        builder: (_) => ReportViewer(bytes: bytes, filename: filename),
       ),
     );
   }
 
   Future<void> _confirmDelete(Transportation entry) async {
+    final AppLocalizations t = AppLocalizations.of(context);
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
         backgroundColor: AppColors.cream,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete this entry?', style: TextStyle(fontSize: 16)),
+        title: Text(t.transportationDeleteTitle, style: const TextStyle(fontSize: 16)),
         content: Text(
           '${entry.dateLabel} · ${entry.km} km',
           style: const TextStyle(fontSize: 12, color: AppColors.muted),
@@ -116,15 +119,15 @@ class _TransportationScreenState extends State<TransportationScreen> {
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.muted),
+            child: Text(
+              t.commonCancel,
+              style: const TextStyle(color: AppColors.muted),
             ),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.red),
-            child: const Text('Delete'),
+            child: Text(t.transportationDelete),
           ),
         ],
       ),
@@ -139,13 +142,14 @@ class _TransportationScreenState extends State<TransportationScreen> {
     if (!mounted) return;
     showApiSnack(
       context,
-      ok ? 'Entry deleted.' : (provider.error ?? 'Could not delete the entry.'),
+      ok ? t.transportationEntryDeleted : (provider.error ?? t.transportationCouldNotDelete),
       isError: !ok,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     final TransportationProvider provider = context
         .watch<TransportationProvider>();
 
@@ -158,7 +162,7 @@ class _TransportationScreenState extends State<TransportationScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 CdsAppBar(
-                  title: 'Daily expenses',
+                  title: t.transportationTitle,
                   action: provider.isExportingReport
                       ? const Center(
                           child: SizedBox(
@@ -172,7 +176,7 @@ class _TransportationScreenState extends State<TransportationScreen> {
                         )
                       : SoftIconButton(
                           icon: Icons.picture_as_pdf_outlined,
-                          tooltip: 'Open report',
+                          tooltip: t.transportationOpenReport,
                           onPressed: _openReport,
                         ),
                 ),
@@ -182,13 +186,13 @@ class _TransportationScreenState extends State<TransportationScreen> {
                   onTap: _pickRange,
                 ),
                 const SizedBox(height: 14),
-                _Totals(
+                TransportationTotals(
                   km: provider.totalKm,
                   amount: provider.totalAmount,
                   count: provider.entries.length,
                 ),
                 const SizedBox(height: 18),
-                const ListLabel(label: 'Entries'),
+                ListLabel(label: t.transportationEntriesLabel),
                 Expanded(
                   child: RefreshIndicator(
                     color: AppColors.green,
@@ -221,8 +225,8 @@ class _TransportationScreenState extends State<TransportationScreen> {
 }
 
 /// In-app PDF viewer; its toolbar carries the Print and Share actions.
-class _ReportViewer extends StatelessWidget {
-  const _ReportViewer({required this.bytes, required this.filename});
+class ReportViewer extends StatelessWidget {
+  const ReportViewer({super.key, required this.bytes, required this.filename});
 
   final Uint8List bytes;
   final String filename;
@@ -234,9 +238,9 @@ class _ReportViewer extends StatelessWidget {
         child: SafeArea(
           child: Column(
             children: <Widget>[
-              const Padding(
-                padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
-                child: CdsAppBar(title: 'Report'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
+                child: CdsAppBar(title: AppLocalizations.of(context).transportationReportTitle),
               ),
               Expanded(
                 child: PdfPreview(
@@ -257,8 +261,9 @@ class _ReportViewer extends StatelessWidget {
   }
 }
 
-class _Totals extends StatelessWidget {
-  const _Totals({
+class TransportationTotals extends StatelessWidget {
+  const TransportationTotals({
+    super.key,
     required this.km,
     required this.amount,
     required this.count,
@@ -270,6 +275,7 @@ class _Totals extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
@@ -278,11 +284,11 @@ class _Totals extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          _Metric(label: 'TOTAL', value: amount.toStringAsFixed(2)),
+          _Metric(label: t.transportationTotal, value: amount.toStringAsFixed(2)),
           const _Divider(),
-          _Metric(label: 'DISTANCE', value: '${km.toStringAsFixed(0)} km'),
+          _Metric(label: t.transportationDistance, value: '${km.toStringAsFixed(0)} km'),
           const _Divider(),
-          _Metric(label: 'ENTRIES', value: '$count'),
+          _Metric(label: t.transportationEntriesMetric, value: '$count'),
         ],
       ),
     );
@@ -354,6 +360,7 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     if (provider.isLoading && provider.entries.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.green),
@@ -366,9 +373,9 @@ class _Body extends StatelessWidget {
           StateMessage(
             icon: Icons.cloud_off_rounded,
             tone: ToneColor.red,
-            title: 'Could not load entries',
+            title: t.transportationCouldNotLoadEntries,
             message: provider.error,
-            actionLabel: 'Try again',
+            actionLabel: t.commonTryAgain,
             onAction: onRetry,
           ),
         ],
@@ -377,12 +384,12 @@ class _Body extends StatelessWidget {
 
     if (provider.entries.isEmpty) {
       return ListView(
-        children: const <Widget>[
+        children: <Widget>[
           StateMessage(
             icon: Icons.directions_car_filled_outlined,
             tone: ToneColor.amber,
-            title: 'No entries yet',
-            message: 'Tap + to log a trip with its KM, clients and total.',
+            title: t.transportationNoEntries,
+            message: t.transportationNoEntriesMsg,
           ),
         ],
       );
@@ -395,7 +402,7 @@ class _Body extends StatelessWidget {
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (BuildContext context, int index) {
         final Transportation entry = provider.entries[index];
-        return _EntryCard(
+        return TransportationEntryCard(
           entry: entry,
           onEdit: () => onEdit(entry),
           onDelete: () => onDelete(entry),
@@ -405,19 +412,23 @@ class _Body extends StatelessWidget {
   }
 }
 
-class _EntryCard extends StatelessWidget {
-  const _EntryCard({
+/// One trip. Tap-to-edit and the trash icon only exist when their callbacks
+/// are given — a manager viewing a team member's trips passes neither.
+class TransportationEntryCard extends StatelessWidget {
+  const TransportationEntryCard({
+    super.key,
     required this.entry,
-    required this.onEdit,
-    required this.onDelete,
+    this.onEdit,
+    this.onDelete,
   });
 
   final Transportation entry;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     return GlassCard(
       onTap: onEdit,
       radius: 18,
@@ -461,15 +472,18 @@ class _EntryCard extends StatelessWidget {
                   color: AppColors.green,
                 ),
               ),
-              IconButton(
-                onPressed: onDelete,
-                tooltip: 'Delete entry',
-                icon: const Icon(
-                  Icons.delete_outline_rounded,
-                  size: 18,
-                  color: AppColors.red,
-                ),
-              ),
+              if (onDelete != null)
+                IconButton(
+                  onPressed: onDelete,
+                  tooltip: t.transportationDeleteEntryTooltip,
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 18,
+                    color: AppColors.red,
+                  ),
+                )
+              else
+                const SizedBox(width: 6),
             ],
           ),
           if (entry.clients.isNotEmpty) ...<Widget>[

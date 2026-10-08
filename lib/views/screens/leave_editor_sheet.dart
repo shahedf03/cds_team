@@ -3,11 +3,19 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/api_formats.dart';
+import '../../l10n/gen/app_localizations.dart';
+import '../../models/client.dart';
 import '../../models/leave_request.dart';
 import '../../models/system_code.dart';
+import '../../models/transportation.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/leave_provider.dart';
 import '../widgets/common.dart';
+
+/// What the sheet pops after a successful submit: the new request's id (from
+/// the `POST /api/leave` response; `''` if the server sent none) and whether
+/// it takes a medical-report attachment.
+typedef LeaveSubmitted = ({String transNo, bool isSickLeave});
 
 /// §9 create form: segmented control, From/To date+time, Type dropdown, Notes.
 ///
@@ -30,6 +38,11 @@ class _LeaveEditorSheetState extends State<LeaveEditorSheet> {
   late DateTime _start;
   late DateTime _end;
   SystemCode? _type;
+  List<TransportationClient> _selectedClients = <TransportationClient>[];
+
+  /// §F (2026-10-05): مغادرة عمل, `vacLeaveType == "2"` under `LeaveType`.
+  bool get _isWorkLeaving =>
+      _kind == LeaveKind.leaving && _type?.sysCode == '2';
 
   @override
   void initState() {
@@ -75,8 +88,56 @@ class _LeaveEditorSheetState extends State<LeaveEditorSheet> {
         _start = DateTime(_start.year, _start.month, _start.day);
         _end = DateTime(_end.year, _end.month, _end.day);
       }
+      if (kind != LeaveKind.leaving) {
+        _selectedClients = <TransportationClient>[];
+      }
     });
     _syncTypeWithKind();
+  }
+
+  void _setType(SystemCode? type) {
+    setState(() {
+      _type = type;
+      if (type?.sysCode != '2') _selectedClients = <TransportationClient>[];
+    });
+  }
+
+  /// The picker is fed by `GET /api/clients` (§5) — no hardcoded list, same
+  /// sheet Transportation's "+ Add Client" uses.
+  Future<void> _addClient() async {
+    final LeaveProvider provider = context.read<LeaveProvider>();
+    await provider.loadClients();
+
+    if (!mounted) return;
+
+    final Set<String> selectedIds = _selectedClients
+        .map((TransportationClient c) => c.clientId)
+        .toSet();
+    final Client? picked = await showModalBottomSheet<Client>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.cream,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (BuildContext context) => Consumer<LeaveProvider>(
+        builder: (BuildContext context, LeaveProvider p, Widget? _) =>
+            ClientPickerSheet(
+              clients: p.clients,
+              isLoading: p.isLoadingClients,
+              selectedIds: selectedIds,
+              onRetry: () => p.loadClients(force: true),
+            ),
+      ),
+    );
+
+    if (picked == null) return;
+    setState(() {
+      _selectedClients = <TransportationClient>[
+        ..._selectedClients,
+        picked.toTransportationClient(),
+      ];
+    });
   }
 
   Future<void> _pickMoment({required bool isStart}) async {
@@ -120,16 +181,22 @@ class _LeaveEditorSheetState extends State<LeaveEditorSheet> {
   }
 
   Future<void> _submit() async {
+    final AppLocalizations t = AppLocalizations.of(context);
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     if (_type == null) {
-      showApiSnack(context, 'Choose a type for this request.');
+      showApiSnack(context, t.leaveEditorChooseType);
       return;
     }
 
     if (_end.isBefore(_start)) {
-      showApiSnack(context, 'The end date cannot be before the start date.');
+      showApiSnack(context, t.leaveEditorEndBeforeStart);
+      return;
+    }
+
+    if (_isWorkLeaving && _selectedClients.isEmpty) {
+      showApiSnack(context, t.leaveChooseClientRequired);
       return;
     }
 
@@ -151,7 +218,7 @@ class _LeaveEditorSheetState extends State<LeaveEditorSheet> {
     }
     if (!mounted) return;
 
-    final bool ok = await provider.submit(
+    final String? transNo = await provider.submit(
       LeaveCreateRequest(
         kind: _kind,
         userId: userId,
@@ -159,156 +226,186 @@ class _LeaveEditorSheetState extends State<LeaveEditorSheet> {
         end: _end,
         vacLeaveType: _type!.sysCode,
         notes: _notes.text.trim(),
+        clientIds: _isWorkLeaving
+            ? _selectedClients
+                  .map((TransportationClient c) => c.clientId)
+                  .toList()
+            : const <String>[],
       ),
       userId: userId,
     );
 
     if (!mounted) return;
-    if (ok) {
-      Navigator.of(context).pop(true);
+    if (transNo != null) {
+      Navigator.of(context).pop<LeaveSubmitted>((
+        transNo: transNo,
+        // Same rule as [LeaveRequest.isSickLeave].
+        isSickLeave: _type!.name.contains('مرض'),
+      ));
     } else {
       // 400 from a bad date format lands here with the API's own message.
-      showApiSnack(context, provider.error ?? 'Could not submit the request.');
+      showApiSnack(context, provider.error ?? t.leaveEditorCouldNotSubmit);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     final LeaveProvider provider = context.watch<LeaveProvider>();
     final List<SystemCode> types = provider.typesFor(_kind);
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Center(
-                  child: Container(
-                    width: 38,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.line,
-                      borderRadius: BorderRadius.circular(99),
+    // Its own Scaffold so `showApiSnack`'s ScaffoldMessenger anchors here —
+    // without one, the snackbar falls back to the screen behind this modal
+    // bottom sheet and renders underneath it, invisible.
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Center(
+                    child: Container(
+                      width: 38,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.line,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 18),
-                const Text(
-                  'New request',
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.ink,
+                  const SizedBox(height: 18),
+                  Text(
+                    t.leaveNewRequest,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.ink,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: LeaveKind.values.map((LeaveKind kind) {
-                    final bool active = kind == _kind;
-                    return Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: () => _setKind(kind),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            decoration: BoxDecoration(
-                              color: active
-                                  ? AppColors.ink
-                                  : const Color(0x88FFFFFF),
-                              border: Border.all(
-                                color: active ? AppColors.ink : AppColors.line,
+                  const SizedBox(height: 16),
+                  Row(
+                    children: LeaveKind.values.map((LeaveKind kind) {
+                      final bool active = kind == _kind;
+                      return Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: GestureDetector(
+                            onTap: () => _setKind(kind),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              decoration: BoxDecoration(
+                                color: active
+                                    ? AppColors.ink
+                                    : const Color(0x88FFFFFF),
+                                border: Border.all(
+                                  color: active
+                                      ? AppColors.ink
+                                      : AppColors.line,
+                                ),
+                                borderRadius: BorderRadius.circular(14),
                               ),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              '${kind.labelEn} · ${kind.labelAr}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: active ? Colors.white : AppColors.muted,
+                              alignment: Alignment.center,
+                              child: Text(
+                                kind.label(t),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: active
+                                      ? Colors.white
+                                      : AppColors.muted,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 18),
-                _MomentField(
-                  label: 'From',
-                  value: _formatMoment(_start),
-                  onTap: () => _pickMoment(isStart: true),
-                ),
-                const SizedBox(height: 12),
-                _MomentField(
-                  label: 'To',
-                  value: _formatMoment(_end),
-                  onTap: () => _pickMoment(isStart: false),
-                ),
-                const SizedBox(height: 12),
-                _TypeDropdown(
-                  types: types,
-                  value: _type,
-                  onChanged: (SystemCode? value) =>
-                      setState(() => _type = value),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _notes,
-                  maxLines: 3,
-                  textCapitalization: TextCapitalization.sentences,
-                  style: const TextStyle(fontSize: 13, color: AppColors.ink),
-                  decoration: _decoration(
-                    label: 'Notes',
-                    icon: Icons.notes_rounded,
-                    alignTop: true,
+                      );
+                    }).toList(),
                   ),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  height: 52,
-                  child: FilledButton.icon(
-                    onPressed: provider.isSaving ? null : _submit,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.green,
-                      disabledBackgroundColor: AppColors.green.withValues(
-                        alpha: 0.5,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                  const SizedBox(height: 18),
+                  _MomentField(
+                    label: t.leaveEditorFrom,
+                    value: _formatMoment(_start),
+                    onTap: () => _pickMoment(isStart: true),
+                  ),
+                  const SizedBox(height: 12),
+                  _MomentField(
+                    label: t.leaveEditorTo,
+                    value: _formatMoment(_end),
+                    onTap: () => _pickMoment(isStart: false),
+                  ),
+                  const SizedBox(height: 12),
+                  _TypeDropdown(
+                    types: types,
+                    value: _type,
+                    onChanged: _setType,
+                  ),
+                  if (_isWorkLeaving) ...<Widget>[
+                    const SizedBox(height: 12),
+                    _WorkLeavingClients(
+                      clients: _selectedClients,
+                      onAdd: _addClient,
+                      onRemove: (TransportationClient c) =>
+                          setState(() => _selectedClients.remove(c)),
                     ),
-                    icon: provider.isSaving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.send_rounded, size: 18),
-                    label: Text(
-                      provider.isSaving ? 'Submitting…' : 'Submit request',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                      ),
+                  ],
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _notes,
+                    maxLines: 3,
+                    textCapitalization: TextCapitalization.sentences,
+                    style: const TextStyle(fontSize: 13, color: AppColors.ink),
+                    decoration: _decoration(
+                      label: t.editorNotes,
+                      icon: Icons.notes_rounded,
+                      alignTop: true,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 52,
+                    child: FilledButton.icon(
+                      onPressed: provider.isSaving ? null : _submit,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.green,
+                        disabledBackgroundColor: AppColors.green.withValues(
+                          alpha: 0.5,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      icon: provider.isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.send_rounded, size: 18),
+                      label: Text(
+                        provider.isSaving
+                            ? t.leaveEditorSubmitting
+                            : t.leaveEditorSubmitRequest,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -317,43 +414,47 @@ class _LeaveEditorSheetState extends State<LeaveEditorSheet> {
   }
 
   Future<bool> _confirmDespiteConflicts(List<LeaveConflict> conflicts) async {
+    final AppLocalizations t = AppLocalizations.of(context);
     final bool? proceed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
         backgroundColor: AppColors.cream,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Teammates off at the same time',
-          style: TextStyle(fontSize: 16),
+        title: Text(
+          t.leaveEditorConflictsTitle,
+          style: const TextStyle(fontSize: 16),
         ),
-        content: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: conflicts
-                .map(
-                  (LeaveConflict c) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 3),
-                    child: Text(
-                      '${c.userName.isEmpty ? c.userId : c.userName} بإجازة '
-                      'بنفس الفترة (${c.fromDateTime} → ${c.toDateTime})',
-                      style: const TextStyle(fontSize: 12, color: AppColors.ink),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: conflicts
+              .map(
+                (LeaveConflict c) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Text(
+                    t.leaveEditorConflictLine(
+                      c.userName.isEmpty ? c.userId : c.userName,
+                      c.fromDateTime,
+                      c.toDateTime,
                     ),
+                    style: const TextStyle(fontSize: 12, color: AppColors.ink),
                   ),
-                )
-                .toList(),
-          ),
+                ),
+              )
+              .toList(),
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Back', style: TextStyle(color: AppColors.muted)),
+            child: Text(
+              t.commonBack,
+              style: const TextStyle(color: AppColors.muted),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.green),
-            child: const Text('Submit anyway'),
+            child: Text(t.leaveEditorSubmitAnyway),
           ),
         ],
       ),
@@ -383,10 +484,7 @@ class _MomentField extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: InputDecorator(
-        decoration: _decoration(
-          label: label,
-          icon: Icons.event_outlined,
-        ),
+        decoration: _decoration(label: label, icon: Icons.event_outlined),
         child: Text(
           value,
           style: const TextStyle(
@@ -395,6 +493,88 @@ class _MomentField extends StatelessWidget {
             color: AppColors.ink,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// §F — "رايح عند أي عميل؟", shown only for a مغادرة عمل. Required before
+/// submit; see [_LeaveEditorSheetState._submit].
+class _WorkLeavingClients extends StatelessWidget {
+  const _WorkLeavingClients({
+    required this.clients,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final List<TransportationClient> clients;
+  final VoidCallback onAdd;
+  final ValueChanged<TransportationClient> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        color: const Color(0x66FFFFFF),
+        border: Border.all(color: AppColors.line),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          InkWell(
+            onTap: onAdd,
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      t.leaveWorkLeavingClientsLabel,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.add_rounded,
+                    size: 16,
+                    color: AppColors.green,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    t.editorAddClient,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.green,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (clients.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: clients
+                  .map(
+                    (TransportationClient c) => ClientChip(
+                      name: c.clientName,
+                      onRemove: () => onRemove(c),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -413,12 +593,16 @@ class _TypeDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     if (types.isEmpty) {
       return InputDecorator(
-        decoration: _decoration(label: 'Type', icon: Icons.category_outlined),
-        child: const Text(
-          'No types available',
-          style: TextStyle(fontSize: 12, color: AppColors.muted),
+        decoration: _decoration(
+          label: t.leaveEditorType,
+          icon: Icons.category_outlined,
+        ),
+        child: Text(
+          t.leaveEditorNoTypesAvailable,
+          style: const TextStyle(fontSize: 12, color: AppColors.muted),
         ),
       );
     }
@@ -426,7 +610,10 @@ class _TypeDropdown extends StatelessWidget {
     return DropdownButtonFormField<SystemCode>(
       initialValue: types.contains(value) ? value : null,
       isExpanded: true,
-      decoration: _decoration(label: 'Type', icon: Icons.category_outlined),
+      decoration: _decoration(
+        label: t.leaveEditorType,
+        icon: Icons.category_outlined,
+      ),
       style: const TextStyle(fontSize: 13, color: AppColors.ink),
       dropdownColor: AppColors.cream,
       borderRadius: BorderRadius.circular(14),
@@ -443,7 +630,8 @@ class _TypeDropdown extends StatelessWidget {
           )
           .toList(),
       onChanged: onChanged,
-      validator: (SystemCode? v) => v == null ? 'Choose a type' : null,
+      validator: (SystemCode? v) =>
+          v == null ? t.leaveEditorChooseTypeValidator : null,
     );
   }
 }

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- OneSignal push (§ push notifications). Xcode/App Store Connect flips
+	     this to "production" automatically once the app is archived with a
+	     distribution provisioning profile — leave it as "development" for
+	     local/TestFlight-via-Xcode-Debug builds. -->
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>

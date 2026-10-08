@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../l10n/gen/app_localizations.dart';
 import 'common.dart';
 
 /// Inner-screen header: back button, centred title, optional action.
@@ -29,7 +30,7 @@ class CdsAppBar extends StatelessWidget {
             child: showBack
                 ? SoftIconButton(
                     icon: Icons.arrow_back_rounded,
-                    tooltip: 'Back',
+                    tooltip: AppLocalizations.of(context).commonBack,
                     onPressed: onBack ?? () => Navigator.of(context).maybePop(),
                   )
                 : null,

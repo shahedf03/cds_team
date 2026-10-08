@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/api_formats.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/client.dart';
 import '../../models/transportation.dart';
 import '../../providers/auth_provider.dart';
@@ -77,8 +78,9 @@ class _TransportationEditorScreenState
     if (picked != null) setState(() => _date = picked);
   }
 
-  /// Total is read-only: every KM edit (debounced) asks the API for it, since
-  /// the per-km rate can change server-side at any time.
+  /// Every KM edit (debounced) asks the API for the total, since the
+  /// per-km rate can change server-side at any time. The total field stays
+  /// editable so the user can override the computed value.
   void _onKmChanged(String value) {
     _kmDebounce?.cancel();
     final String km = value.trim();
@@ -107,6 +109,9 @@ class _TransportationEditorScreenState
 
     if (!mounted) return;
 
+    final Set<String> selectedIds = _clients
+        .map((TransportationClient c) => c.clientId)
+        .toSet();
     final Client? picked = await showModalBottomSheet<Client>(
       context: context,
       isScrollControlled: true,
@@ -114,10 +119,14 @@ class _TransportationEditorScreenState
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
-      builder: (BuildContext context) => _ClientPickerSheet(
-        selectedIds: _clients
-            .map((TransportationClient c) => c.clientId)
-            .toSet(),
+      builder: (BuildContext context) => Consumer<TransportationProvider>(
+        builder: (BuildContext context, TransportationProvider p, Widget? _) =>
+            ClientPickerSheet(
+              clients: p.clients,
+              isLoading: p.isLoadingClients,
+              selectedIds: selectedIds,
+              onRetry: () => p.loadClients(force: true),
+            ),
       ),
     );
 
@@ -157,12 +166,13 @@ class _TransportationEditorScreenState
     if (ok) {
       Navigator.of(context).pop(true);
     } else {
-      showApiSnack(context, provider.error ?? 'Could not save the entry.');
+      showApiSnack(context, provider.error ?? AppLocalizations.of(context).editorCouldNotSave);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     final bool saving = context.select<TransportationProvider, bool>(
       (TransportationProvider p) => p.isSaving,
     );
@@ -177,7 +187,7 @@ class _TransportationEditorScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  CdsAppBar(title: _isEditing ? 'Edit entry' : 'New entry'),
+                  CdsAppBar(title: _isEditing ? t.editorEditEntry : t.editorNewEntry),
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.only(bottom: 30),
@@ -188,10 +198,10 @@ class _TransportationEditorScreenState
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: <Widget>[
-                              const Text('TRANSACTION', style: _eyebrow),
+                              Text(t.editorTransactionLabel, style: _eyebrow),
                               const SizedBox(height: 14),
                               _DateField(
-                                label: 'Date',
+                                label: t.editorDate,
                                 value: ApiFormats.displayDate.format(_date),
                                 onTap: _pickDate,
                               ),
@@ -201,7 +211,7 @@ class _TransportationEditorScreenState
                                   Expanded(
                                     child: _NumberField(
                                       controller: _km,
-                                      label: 'KM',
+                                      label: t.editorKm,
                                       icon: Icons.route_outlined,
                                       onChanged: _onKmChanged,
                                     ),
@@ -210,10 +220,9 @@ class _TransportationEditorScreenState
                                   Expanded(
                                     child: _NumberField(
                                       controller: _total,
-                                      label: 'Total',
+                                      label: t.editorTotal,
                                       icon: Icons.payments_outlined,
                                       required: true,
-                                      readOnly: true,
                                     ),
                                   ),
                                 ],
@@ -232,15 +241,15 @@ class _TransportationEditorScreenState
                             children: <Widget>[
                               Row(
                                 children: <Widget>[
-                                  const Expanded(
-                                    child: Text('CLIENTS', style: _eyebrow),
+                                  Expanded(
+                                    child: Text(t.editorClientsLabel, style: _eyebrow),
                                   ),
                                   TextButton.icon(
                                     onPressed: _addClient,
                                     icon: const Icon(Icons.add_rounded, size: 16),
-                                    label: const Text(
-                                      'Add Client',
-                                      style: TextStyle(
+                                    label: Text(
+                                      t.editorAddClient,
+                                      style: const TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -259,11 +268,11 @@ class _TransportationEditorScreenState
                               ),
                               const SizedBox(height: 12),
                               if (_clients.isEmpty)
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 10),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
                                   child: Text(
-                                    'No clients attached to this trip yet.',
-                                    style: TextStyle(
+                                    t.editorNoClients,
+                                    style: const TextStyle(
                                       fontSize: 11,
                                       color: AppColors.muted,
                                     ),
@@ -275,7 +284,7 @@ class _TransportationEditorScreenState
                                   runSpacing: 7,
                                   children: _clients
                                       .map(
-                                        (TransportationClient c) => _ClientChip(
+                                        (TransportationClient c) => ClientChip(
                                           name: c.clientName,
                                           onRemove: () => setState(
                                             () => _clients.remove(c),
@@ -316,7 +325,7 @@ class _TransportationEditorScreenState
                               )
                             : const Icon(Icons.save_rounded, size: 18),
                         label: Text(
-                          saving ? 'Saving…' : 'Save entry',
+                          saving ? t.editorSaving : t.editorSaveEntry,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
@@ -395,6 +404,7 @@ class _NumberField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     return TextFormField(
       controller: controller,
       readOnly: readOnly,
@@ -407,8 +417,8 @@ class _NumberField extends StatelessWidget {
       decoration: _fieldDecoration(label: label, icon: icon),
       validator: (String? v) {
         if (!required) return null;
-        if (v == null || v.trim().isEmpty) return 'Required';
-        if (double.tryParse(v.trim()) == null) return 'Enter a number';
+        if (v == null || v.trim().isEmpty) return t.editorRequired;
+        if (double.tryParse(v.trim()) == null) return t.editorEnterNumber;
         return null;
       },
     );
@@ -428,7 +438,7 @@ class _NotesField extends StatelessWidget {
       textCapitalization: TextCapitalization.sentences,
       style: const TextStyle(fontSize: 13, color: AppColors.ink),
       decoration: _fieldDecoration(
-        label: 'Notes',
+        label: AppLocalizations.of(context).editorNotes,
         icon: Icons.notes_rounded,
         alignTop: true,
       ),
@@ -462,183 +472,3 @@ InputDecoration _fieldDecoration({
   ),
   errorStyle: const TextStyle(fontSize: 10, color: AppColors.red),
 );
-
-class _ClientChip extends StatelessWidget {
-  const _ClientChip({required this.name, required this.onRemove});
-
-  final String name;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(11, 7, 5, 7),
-      decoration: BoxDecoration(
-        color: AppColors.blueTint,
-        borderRadius: BorderRadius.circular(99),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Text(
-            name,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: AppColors.blue,
-            ),
-          ),
-          const SizedBox(width: 4),
-          InkWell(
-            onTap: onRemove,
-            customBorder: const CircleBorder(),
-            child: const Padding(
-              padding: EdgeInsets.all(3),
-              child: Icon(Icons.close_rounded, size: 13, color: AppColors.blue),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Searchable list backed by `GET /api/clients`.
-class _ClientPickerSheet extends StatefulWidget {
-  const _ClientPickerSheet({required this.selectedIds});
-
-  final Set<String> selectedIds;
-
-  @override
-  State<_ClientPickerSheet> createState() => _ClientPickerSheetState();
-}
-
-class _ClientPickerSheetState extends State<_ClientPickerSheet> {
-  String _query = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final TransportationProvider provider = context
-        .watch<TransportationProvider>();
-
-    final List<Client> available = provider.clients
-        .where((Client c) => !widget.selectedIds.contains(c.id))
-        .where(
-          (Client c) =>
-              _query.isEmpty ||
-              c.name.toLowerCase().contains(_query.toLowerCase()),
-        )
-        .toList();
-
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.7,
-        child: Column(
-          children: <Widget>[
-            const SizedBox(height: 12),
-            Container(
-              width: 38,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.line,
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const Text(
-                    'Add client',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    autofocus: true,
-                    onChanged: (String v) => setState(() => _query = v),
-                    style: const TextStyle(fontSize: 13),
-                    decoration: _fieldDecoration(
-                      label: 'Search clients',
-                      icon: Icons.search_rounded,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: provider.isLoadingClients && provider.clients.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(color: AppColors.green),
-                    )
-                  : available.isEmpty
-                  ? StateMessage(
-                      icon: Icons.business_outlined,
-                      tone: ToneColor.blue,
-                      title: provider.clients.isEmpty
-                          ? 'No clients available'
-                          : 'No matches',
-                      message: provider.clients.isEmpty
-                          ? 'The client list could not be loaded.'
-                          : 'Try a different search term.',
-                      actionLabel: provider.clients.isEmpty ? 'Retry' : null,
-                      onAction: () => context
-                          .read<TransportationProvider>()
-                          .loadClients(force: true),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                      itemCount: available.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 6),
-                      itemBuilder: (BuildContext context, int index) {
-                        final Client client = available[index];
-                        return GlassCard(
-                          radius: 14,
-                          color: AppColors.cardSoft,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 13,
-                          ),
-                          onTap: () => Navigator.of(context).pop(client),
-                          child: Row(
-                            children: <Widget>[
-                              const IconWell(
-                                icon: Icons.business_outlined,
-                                tone: ToneColor.blue,
-                                size: 30,
-                              ),
-                              const SizedBox(width: 11),
-                              Expanded(
-                                child: Text(
-                                  client.name,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.ink,
-                                  ),
-                                ),
-                              ),
-                              const Icon(
-                                Icons.add_circle_outline_rounded,
-                                size: 18,
-                                color: AppColors.green,
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

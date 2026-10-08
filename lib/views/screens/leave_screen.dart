@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -6,10 +7,14 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/api_formats.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/leave_request.dart';
+import '../../models/transportation.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/leave_provider.dart';
 import '../../providers/loadable.dart';
+import '../../routes/app_routes.dart';
+import '../../services/leave_service.dart';
 import '../widgets/cds_app_bar.dart';
 import '../widgets/common.dart';
 import 'leave_editor_sheet.dart';
@@ -45,7 +50,8 @@ class _LeaveScreenState extends State<LeaveScreen> {
   }
 
   /// Medical report for a sick-leave request: camera or gallery → base64.
-  Future<void> _attachReport(LeaveRequest request) async {
+  Future<void> _attachReport(String transNo) async {
+    final AppLocalizations t = AppLocalizations.of(context);
     final ImageSource? source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: AppColors.cream,
@@ -63,7 +69,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
                   Icons.photo_camera_outlined,
                   color: AppColors.ink,
                 ),
-                title: const Text('Take a photo'),
+                title: Text(t.leaveTakePhoto),
                 onTap: () => Navigator.of(context).pop(ImageSource.camera),
               ),
               ListTile(
@@ -71,7 +77,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
                   Icons.photo_library_outlined,
                   color: AppColors.ink,
                 ),
-                title: const Text('Choose from gallery'),
+                title: Text(t.leaveChooseFromGallery),
                 onTap: () => Navigator.of(context).pop(ImageSource.gallery),
               ),
             ],
@@ -95,18 +101,19 @@ class _LeaveScreenState extends State<LeaveScreen> {
     if (!mounted) return;
 
     final LeaveProvider provider = context.read<LeaveProvider>();
-    final bool ok = await provider.uploadAttachment(
-      request.transNo,
+    final String? attachmentId = await provider.uploadAttachment(
+      transNo,
       fileBase64: fileBase64,
       contentType: contentType,
     );
+    final bool ok = attachmentId != null;
 
     if (!mounted) return;
     showApiSnack(
       context,
       ok
-          ? 'Medical report attached.'
-          : (provider.error ?? 'Could not attach the report.'),
+          ? t.leaveMedicalReportAttached
+          : (provider.error ?? t.leaveCouldNotAttach),
       isError: !ok,
     );
   }
@@ -134,7 +141,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
   }
 
   Future<void> _newRequest() async {
-    final bool? saved = await showModalBottomSheet<bool>(
+    final LeaveSubmitted? saved = await showModalBottomSheet<LeaveSubmitted>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.cream,
@@ -144,18 +151,68 @@ class _LeaveScreenState extends State<LeaveScreen> {
       builder: (BuildContext context) => LeaveEditorSheet(initialKind: _kind),
     );
 
-    if (saved == true && mounted) {
-      showApiSnack(context, 'Request submitted.', isError: false);
+    if (saved == null || !mounted) return;
+    showApiSnack(
+      context,
+      AppLocalizations.of(context).leaveRequestSentToManager,
+      isError: false,
+    );
+
+    // The create response carries the id, so the report can go straight on
+    // without hunting for the new row in the list.
+    if (saved.isSickLeave &&
+        saved.transNo.isNotEmpty &&
+        await _offerAttachNow() &&
+        mounted) {
+      await _attachReport(saved.transNo);
     }
   }
 
+  Future<bool> _offerAttachNow() async {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final bool? attach = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        backgroundColor: AppColors.cream,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          t.leaveAttachMedicalTitle,
+          style: const TextStyle(fontSize: 16),
+        ),
+        content: Text(
+          t.leaveAttachLaterMsg,
+          style: const TextStyle(fontSize: 12, color: AppColors.muted),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              t.leaveLater,
+              style: const TextStyle(color: AppColors.muted),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.green),
+            child: Text(t.leaveAttachNow),
+          ),
+        ],
+      ),
+    );
+    return attach ?? false;
+  }
+
   Future<void> _confirmDelete(LeaveRequest request) async {
+    final AppLocalizations t = AppLocalizations.of(context);
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
         backgroundColor: AppColors.cream,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Cancel this request?', style: TextStyle(fontSize: 16)),
+        title: Text(
+          t.leaveCancelRequestTitle,
+          style: const TextStyle(fontSize: 16),
+        ),
         content: Text(
           '${request.leavVacTypeName} · ${request.fromDateTime}',
           style: const TextStyle(fontSize: 12, color: AppColors.muted),
@@ -163,12 +220,15 @@ class _LeaveScreenState extends State<LeaveScreen> {
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep', style: TextStyle(color: AppColors.muted)),
+            child: Text(
+              t.leaveKeep,
+              style: const TextStyle(color: AppColors.muted),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.red),
-            child: const Text('Cancel request'),
+            child: Text(t.leaveCancelRequest),
           ),
         ],
       ),
@@ -182,15 +242,14 @@ class _LeaveScreenState extends State<LeaveScreen> {
     if (!mounted) return;
     showApiSnack(
       context,
-      ok
-          ? 'Request cancelled.'
-          : (provider.error ?? 'Could not cancel the request.'),
+      ok ? t.leaveRequestCancelled : (provider.error ?? t.leaveCouldNotCancel),
       isError: !ok,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     final LeaveProvider provider = context.watch<LeaveProvider>();
     final List<LeaveRequest> visible = provider.ofKind(_kind);
 
@@ -202,14 +261,15 @@ class _LeaveScreenState extends State<LeaveScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                const CdsAppBar(title: 'Leave & vacation'),
+                CdsAppBar(title: t.leaveTitle),
                 _SegmentedControl(
                   value: _kind,
                   onChanged: (LeaveKind kind) => setState(() => _kind = kind),
                 ),
                 const SizedBox(height: 16),
-                if (_kind == LeaveKind.vacation && provider.balanceLoaded) ...<Widget>[
-                  _BalanceCard(balances: provider.balances),
+                if (_kind == LeaveKind.vacation &&
+                    provider.balanceLoaded) ...<Widget>[
+                  LeaveBalanceCard(balances: provider.balances),
                   const SizedBox(height: 12),
                 ],
                 DateRangePill(
@@ -219,7 +279,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
                 ),
                 const SizedBox(height: 18),
                 ListLabel(
-                  label: '${_kind.labelEn} requests',
+                  label: t.leaveKindRequests(_kind.label(t)),
                   trailing: visible.isEmpty ? null : '${visible.length}',
                 ),
                 Expanded(
@@ -233,7 +293,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
                       kind: _kind,
                       onRetry: _refresh,
                       onDelete: _confirmDelete,
-                      onAttach: _attachReport,
+                      onAttach: (LeaveRequest r) => _attachReport(r.transNo),
                     ),
                   ),
                 ),
@@ -248,16 +308,16 @@ class _LeaveScreenState extends State<LeaveScreen> {
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17)),
         icon: const Icon(Icons.add_rounded, size: 20),
-        label: const Text(
-          'New request',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        label: Text(
+          t.leaveNewRequest,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
         ),
       ),
     );
   }
 }
 
-/// Leaving (مغادرة) / Vacation (إجازة) — drives `transType`.
+/// Leaving / Vacation — drives `transType`.
 class _SegmentedControl extends StatelessWidget {
   const _SegmentedControl({required this.value, required this.onChanged});
 
@@ -266,6 +326,7 @@ class _SegmentedControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -287,26 +348,13 @@ class _SegmentedControl extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Text(
-                      kind.labelEn,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: active ? Colors.white : AppColors.muted,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      kind.labelAr,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: active ? Colors.white70 : AppColors.faintText,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  kind.label(t),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: active ? Colors.white : AppColors.muted,
+                  ),
                 ),
               ),
             ),
@@ -336,6 +384,7 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     if (provider.isLoading && provider.requests.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.green),
@@ -348,9 +397,9 @@ class _Body extends StatelessWidget {
           StateMessage(
             icon: Icons.cloud_off_rounded,
             tone: ToneColor.red,
-            title: 'Could not load requests',
+            title: t.leaveCouldNotLoadRequests,
             message: provider.error,
-            actionLabel: 'Try again',
+            actionLabel: t.commonTryAgain,
             onAction: onRetry,
           ),
         ],
@@ -363,8 +412,8 @@ class _Body extends StatelessWidget {
           StateMessage(
             icon: Icons.event_available_outlined,
             tone: ToneColor.blue,
-            title: 'No ${kind.labelEn.toLowerCase()} requests',
-            message: 'Requests in the selected dates will appear here.',
+            title: t.leaveNoKindRequests(kind.label(t).toLowerCase()),
+            message: t.requestsInRangeMsg,
           ),
         ],
       );
@@ -375,7 +424,7 @@ class _Body extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       itemCount: requests.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (BuildContext context, int index) => _RequestCard(
+      itemBuilder: (BuildContext context, int index) => LeaveRequestCard(
         request: requests[index],
         onDelete: () => onDelete(requests[index]),
         onAttach: () => onAttach(requests[index]),
@@ -384,9 +433,11 @@ class _Body extends StatelessWidget {
   }
 }
 
-/// "11 يوم متبقي من الإجازة السنوية" — one line per whole-day type.
-class _BalanceCard extends StatelessWidget {
-  const _BalanceCard({required this.balances});
+/// "11 days remaining of `typeName`" — one line per whole-day type.
+/// `typeName` is the system code's own name, sent by the API in Arabic
+/// regardless of the app's display language.
+class LeaveBalanceCard extends StatelessWidget {
+  const LeaveBalanceCard({super.key, required this.balances});
 
   final List<LeaveBalance> balances;
 
@@ -394,44 +445,47 @@ class _BalanceCard extends StatelessWidget {
       ? value.round().toString()
       : value.toStringAsFixed(1);
 
+  static String _remaining(AppLocalizations t, double value) {
+    final num count = value == value.roundToDouble() ? value.round() : value;
+    return t.leaveRemainingOf(count);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     return GlassCard(
       radius: 18,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: balances.isEmpty
-          ? const Text(
-              'No vacation balance set for this year.',
-              style: TextStyle(fontSize: 11, color: AppColors.muted),
+          ? Text(
+              t.leaveNoVacationBalance,
+              style: const TextStyle(fontSize: 11, color: AppColors.muted),
             )
           : Column(
               children: balances
                   .map(
                     (LeaveBalance b) => Padding(
                       padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Directionality(
-                        textDirection: TextDirection.rtl,
-                        child: Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: Text(
-                                '${_days(b.remainingDays)} يوم متبقي من ${b.typeName}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.ink,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              '${_days(b.usedDays)} / ${_days(b.totalDays)}',
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Text(
+                              '${_remaining(t, b.remainingDays)} ${b.typeName}',
                               style: const TextStyle(
-                                fontSize: 10,
-                                color: AppColors.muted,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.ink,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          Text(
+                            '${_days(b.usedDays)} / ${_days(b.totalDays)}',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   )
@@ -441,16 +495,20 @@ class _BalanceCard extends StatelessWidget {
   }
 }
 
-class _RequestCard extends StatelessWidget {
-  const _RequestCard({
+/// A leave request row. Delete and attach only appear when their callback
+/// is given, so a manager's read-only view of someone else's list passes
+/// neither.
+class LeaveRequestCard extends StatelessWidget {
+  const LeaveRequestCard({
+    super.key,
     required this.request,
-    required this.onDelete,
-    required this.onAttach,
+    this.onDelete,
+    this.onAttach,
   });
 
   final LeaveRequest request;
-  final VoidCallback onDelete;
-  final VoidCallback onAttach;
+  final VoidCallback? onDelete;
+  final VoidCallback? onAttach;
 
   ToneColor get _statusTone {
     if (request.isApproved) return ToneColor.green;
@@ -460,7 +518,11 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     return GlassCard(
+      onTap: () => Navigator.of(
+        context,
+      ).pushNamed(AppRoutes.leaveDetail, arguments: request.transNo),
       radius: 18,
       padding: const EdgeInsets.fromLTRB(14, 13, 8, 13),
       child: Column(
@@ -480,22 +542,27 @@ class _RequestCard extends StatelessWidget {
                   ),
                 ),
               ),
-              StatusChip(label: request.statusLabel, tone: _statusTone),
-              if (request.isSickLeave)
+              StatusChip(label: request.displayStatus(t), tone: _statusTone),
+              if (request.hasAttachments) ...<Widget>[
+                const SizedBox(width: 6),
+                LeaveAttachmentsBadge(request: request),
+              ],
+              if (request.isSickLeave && onAttach != null)
                 IconButton(
                   onPressed: onAttach,
-                  tooltip: 'Attach medical report',
+                  tooltip: t.leaveAttachMedicalReportTooltip,
                   icon: const Icon(
                     Icons.attach_file_rounded,
                     size: 18,
                     color: AppColors.blue,
                   ),
                 ),
-              // Only a pending request can still be withdrawn.
-              if (request.isPending)
+              // 2026-10-07: the server says whether this can still be
+              // withdrawn — was "Pending and not Approved", now `canWithdraw`.
+              if (request.canWithdraw && onDelete != null)
                 IconButton(
                   onPressed: onDelete,
-                  tooltip: 'Cancel request',
+                  tooltip: t.leaveWithdraw,
                   icon: const Icon(
                     Icons.delete_outline_rounded,
                     size: 18,
@@ -527,7 +594,7 @@ class _RequestCard extends StatelessWidget {
                 ),
               ),
               Text(
-                request.durationLabel,
+                request.durationLabel(t),
                 style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
@@ -537,23 +604,313 @@ class _RequestCard extends StatelessWidget {
               const SizedBox(width: 6),
             ],
           ),
-          if (request.isRejected && request.rejectReason.trim().isNotEmpty) ...<Widget>[
+          if (request.clients.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 8),
+            LeaveClientChips(request: request),
+          ],
+          if (request.isPending && request.hasPendingWith) ...<Widget>[
             const SizedBox(height: 8),
             Text(
-              'Rejected'
-              '${request.approvedBy.trim().isEmpty ? '' : ' by ${request.approvedBy.trim()}'}'
-              ': ${request.rejectReason.trim()}',
+              t.leavePendingWith(request.pendingWithName),
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppColors.amber,
+              ),
+            ),
+          ],
+          if (request.isRejected &&
+              request.rejectReason.trim().isNotEmpty) ...<Widget>[
+            const SizedBox(height: 8),
+            Text(
+              t.rejectionReason(request.rejectReason.trim()),
               style: const TextStyle(fontSize: 10, color: AppColors.red),
             ),
           ] else if (request.isApproved &&
               request.approvedBy.trim().isNotEmpty) ...<Widget>[
             const SizedBox(height: 8),
             Text(
-              'Approved by ${request.approvedBy.trim()}',
+              t.leaveApprovedBy(request.approvedBy.trim()),
               style: const TextStyle(fontSize: 10, color: AppColors.green),
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// 📍 chips for a "work leaving"'s client(s) (§F). Shared by the employee's
+/// own list, the manager's "طلبات الفريق" inbox (so they can see it before
+/// deciding) and the read-only member profile. Renders nothing for every
+/// other type/category — `request.clients` is only ever non-empty here.
+class LeaveClientChips extends StatelessWidget {
+  const LeaveClientChips({super.key, required this.request});
+
+  final LeaveRequest request;
+
+  @override
+  Widget build(BuildContext context) {
+    if (request.clients.isEmpty) return const SizedBox.shrink();
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: request.clients
+          .map(
+            (TransportationClient c) => StatusChip(
+              label: c.clientName,
+              tone: ToneColor.blue,
+              icon: Icons.place_outlined,
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+/// 📎 count — tap opens the viewer. Shared by the employee's own list, the
+/// manager's "طلبات الفريق" inbox (so they can see it before deciding) and
+/// the read-only member profile.
+class LeaveAttachmentsBadge extends StatelessWidget {
+  const LeaveAttachmentsBadge({super.key, required this.request});
+
+  final LeaveRequest request;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!request.hasAttachments) return const SizedBox.shrink();
+    return GestureDetector(
+      onTap: () => showLeaveAttachments(context, transNo: request.transNo),
+      child: StatusChip(
+        label: '${request.attachmentCount}',
+        tone: ToneColor.blue,
+        icon: Icons.attach_file_rounded,
+      ),
+    );
+  }
+}
+
+/// Bottom sheet: thumbnails of every attachment on [transNo], tap for a
+/// full-screen zoomable view. Read-only — no attach action here, that stays
+/// on [LeaveRequestCard]'s own paperclip button.
+Future<void> showLeaveAttachments(
+  BuildContext context, {
+  required String transNo,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.cream,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+    ),
+    builder: (BuildContext context) => _AttachmentsSheet(transNo: transNo),
+  );
+}
+
+class _AttachmentsSheet extends StatefulWidget {
+  const _AttachmentsSheet({required this.transNo});
+
+  final String transNo;
+
+  @override
+  State<_AttachmentsSheet> createState() => _AttachmentsSheetState();
+}
+
+class _AttachmentsSheetState extends State<_AttachmentsSheet> {
+  late final Future<List<LeaveAttachment>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = context.read<LeaveService>().attachments(widget.transNo);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Center(
+              child: Container(
+                width: 38,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.line,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+            Text(
+              t.leaveAttachmentsTitle,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: AppColors.ink,
+              ),
+            ),
+            const SizedBox(height: 14),
+            FutureBuilder<List<LeaveAttachment>>(
+              future: _future,
+              builder:
+                  (
+                    BuildContext context,
+                    AsyncSnapshot<List<LeaveAttachment>> snapshot,
+                  ) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 40),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.green,
+                          ),
+                        ),
+                      );
+                    }
+                    final List<LeaveAttachment>? items = snapshot.data;
+                    if (snapshot.hasError || items == null) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Text(
+                          t.leaveCouldNotLoadAttachments,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.red,
+                          ),
+                        ),
+                      );
+                    }
+                    if (items.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Text(
+                          t.leaveNoAttachments,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                      );
+                    }
+                    return SizedBox(
+                      height: 104,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: items.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 10),
+                        itemBuilder: (BuildContext context, int index) =>
+                            _AttachmentThumb(attachment: items[index]),
+                      ),
+                    );
+                  },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AttachmentThumb extends StatefulWidget {
+  const _AttachmentThumb({required this.attachment});
+
+  final LeaveAttachment attachment;
+
+  @override
+  State<_AttachmentThumb> createState() => _AttachmentThumbState();
+}
+
+class _AttachmentThumbState extends State<_AttachmentThumb> {
+  late final Future<Uint8List> _bytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _bytes = context.read<LeaveService>().attachmentBytes(widget.attachment.id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Uint8List>(
+      future: _bytes,
+      builder: (BuildContext context, AsyncSnapshot<Uint8List> snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return _thumbFrame(
+            const Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.green,
+                ),
+              ),
+            ),
+          );
+        }
+        final Uint8List? bytes = snapshot.data;
+        if (snapshot.hasError || bytes == null) {
+          return _thumbFrame(
+            const Icon(Icons.broken_image_outlined, color: AppColors.muted),
+          );
+        }
+        return GestureDetector(
+          onTap: () => Navigator.of(context).push<void>(
+            MaterialPageRoute<void>(
+              builder: (_) => _AttachmentViewer(bytes: bytes),
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.memory(
+              bytes,
+              width: 96,
+              height: 96,
+              fit: BoxFit.cover,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _thumbFrame(Widget child) => Container(
+    width: 96,
+    height: 96,
+    decoration: BoxDecoration(
+      color: AppColors.cardSoft,
+      borderRadius: BorderRadius.circular(14),
+    ),
+    child: child,
+  );
+}
+
+/// Full-screen pinch-to-zoom view of one attachment.
+class _AttachmentViewer extends StatelessWidget {
+  const _AttachmentViewer({required this.bytes});
+
+  final Uint8List bytes;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          minScale: 0.5,
+          maxScale: 4,
+          child: Image.memory(bytes),
+        ),
       ),
     );
   }

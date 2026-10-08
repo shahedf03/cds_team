@@ -33,9 +33,9 @@ class SystemCode {
 class SysCodeType {
   const SysCodeType._();
 
-  /// Types offered when the segmented control is on "Leaving" (مغادرة).
+  /// Types offered when the segmented control is on "Leaving".
   static const String leaving = 'LeaveType';
 
-  /// Types offered when the segmented control is on "Vacation" (إجازة).
+  /// Types offered when the segmented control is on "Vacation".
   static const String vacation = 'VacationType';
 }

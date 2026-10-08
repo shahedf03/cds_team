@@ -7,11 +7,11 @@ class AppColors {
   static const Color ink = Color(0xFF25333B);
   static const Color green = Color(0xFF1E9E71);
   static const Color deep = Color(0xFF0F7A56);
-  static const Color cream = Color(0xFFFDF3E7);
-  static const Color peach = Color(0xFFF4A261);
+  static const Color cream = Color(0xFFF7FBF9);
+  static const Color peach = Color(0xFFDFF2EA);
   static const Color red = Color(0xFFDD4F45);
   static const Color amber = Color(0xFFDD9142);
-  static const Color line = Color(0xFFEEE5DC);
+  static const Color line = Color(0xFFE4ECE9);
   static const Color muted = Color(0xFF8B9795);
   static const Color blue = Color(0xFF557D8C);
 
@@ -27,11 +27,12 @@ class AppColors {
   static const Color subtleText = Color(0xFF86918F);
   static const Color faintText = Color(0xFFA0AAA7);
 
-  /// The warm peach/cream backdrop behind every screen.
+  /// The clean white/green-tinted backdrop behind every screen, echoing the
+  /// CDS logo's white background with a whisper of brand green.
   static const LinearGradient appBackground = LinearGradient(
     begin: Alignment(-0.6, -1),
     end: Alignment(0.6, 1),
-    colors: <Color>[cream, Color(0xFFF9DBC3), peach],
+    colors: <Color>[Color(0xFFFFFFFF), cream, peach],
     stops: <double>[0, 0.55, 1],
   );
 
@@ -47,7 +48,7 @@ class AppColors {
 
   static List<BoxShadow> get softShadow => const <BoxShadow>[
     BoxShadow(
-      color: Color(0x158D614D),
+      color: Color(0x1925333B),
       blurRadius: 32,
       offset: Offset(0, 15),
     ),
@@ -55,7 +56,7 @@ class AppColors {
 
   static List<BoxShadow> get tinyShadow => const <BoxShadow>[
     BoxShadow(
-      color: Color(0x108D614D),
+      color: Color(0x1225333B),
       blurRadius: 18,
       offset: Offset(0, 8),
     ),

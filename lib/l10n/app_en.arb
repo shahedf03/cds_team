@@ -1,0 +1,404 @@
+{
+  "@@locale": "en",
+
+  "commonTryAgain": "Try again",
+  "commonRetry": "Retry",
+  "commonCancel": "Cancel",
+  "commonBack": "Back",
+  "commonMore": "More",
+
+  "loginWelcomeBack": "WELCOME BACK",
+  "loginSignInToContinue": "Sign in to continue",
+  "loginUsername": "Username",
+  "loginEnterUsername": "Enter your username",
+  "loginPassword": "Password",
+  "loginEnterPassword": "Enter your password",
+  "loginSignIn": "Sign in",
+  "loginFooter": "Cloud Data Solutions · Internal use only",
+
+  "dashboardGoodMorning": "Good morning",
+  "dashboardGoodAfternoon": "Good afternoon",
+  "dashboardGoodEvening": "Good evening",
+  "dashboardWelcome": "Welcome",
+  "dashboardHello": "hello",
+  "dashboardOverview": "Overview",
+  "dashboardThisMonth": "This month",
+  "navHome": "Home",
+  "navTasks": "Tasks",
+  "dashboardAttendance": "Attendance",
+  "dashboardLeaveRequests": "Leave requests",
+  "dashboardOpenTasks": "Open tasks",
+  "dashboardQuickActions": "Quick actions",
+  "dashboardDailyExpenses": "Daily expenses",
+  "dashboardDailyExpensesSub": "Log KM, clients & totals",
+  "dashboardLeaveRequest": "Leave request",
+  "dashboardLeaveRequestSub": "Leaving or vacation",
+  "dashboardRecentActivity": "Recent activity",
+  "dashboardViewAll": "View all",
+  "dashboardNoActivity": "No activity yet this month.",
+  "dashboardCheckedIn": "Checked in",
+  "dashboardTripSubmitted": "Trip submitted",
+  "dashboardWorkHoursToday": "Work hours today",
+  "dashboardEmployeesPunched": "Punched in today",
+  "dashboardCouldNotLoad": "Could not load the dashboard",
+  "dashboardManagerEyebrow": "Your team at a glance",
+  "dashboardEmployeeEyebrow": "Your work at a glance",
+  "dashboardManagerSubtitle": "Here's how your team is doing today.",
+  "dashboardEmployeeSubtitle": "Here's a summary of your day.",
+  "dashboardDailySummary": "Daily performance summary",
+  "dashboardLastUpdated": "Updated {time}",
+  "@dashboardLastUpdated": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "dashboardTasksThisMonth": "Tasks this month",
+  "dashboardDoneCount": "{count} done",
+  "@dashboardDoneCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "dashboardOverdueCount": "{count} overdue",
+  "@dashboardOverdueCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "dashboardNoPunchToday": "No punch recorded today",
+  "dashboardAttendanceToday": "Attendance today",
+  "dashboardOfTeam": "{percent}% of the team",
+  "@dashboardOfTeam": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "dashboardCompletionRate": "Monthly task completion",
+  "dashboardPendingApprovals": "Awaiting your approval",
+  "dashboardTeamToday": "Team today",
+  "dashboardOnLeaveAbsent": "{onLeave} on leave · {absent} not punched",
+  "@dashboardOnLeaveAbsent": {
+    "placeholders": {
+      "onLeave": { "type": "int" },
+      "absent": { "type": "int" }
+    }
+  },
+  "dashboardUpcomingTasks": "Upcoming tasks",
+  "dashboardPresent": "Present",
+  "dashboardNotPunched": "Not punched",
+  "dashboardOnLeave": "On leave",
+  "dashboardTeamLabel": "Team",
+
+  "checkInAttendance": "ATTENDANCE",
+  "checkInLive": "Live",
+  "checkInVerifying": "Verifying…",
+  "checkInTapToPunch": "Tap to punch",
+  "checkInNoPunchToday": "No punch recorded today",
+  "checkInIn": "In",
+  "checkInOut": "Out",
+  "checkInDurationHoursMinutes": "{hours}h {minutes}m",
+  "@checkInDurationHoursMinutes": {
+    "placeholders": { "hours": { "type": "int" }, "minutes": { "type": "int" } }
+  },
+  "checkInDurationMinutes": "{minutes}m",
+  "@checkInDurationMinutes": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "checkInElapsedSince": "{duration} · since {time}",
+  "@checkInElapsedSince": {
+    "placeholders": { "duration": { "type": "String" }, "time": { "type": "String" } }
+  },
+  "checkInPending": "{count, plural, one{One punch waiting for a connection — it will send automatically} other{{count} punches waiting for a connection — they will send automatically}}",
+  "@checkInPending": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "checkInInsideGeofence": "Inside geofence",
+  "checkInInsideSite": "Inside · {siteName}",
+  "@checkInInsideSite": {
+    "placeholders": { "siteName": { "type": "String" } }
+  },
+  "checkInFingerprintRequired": "Fingerprint required",
+  "checkInSomethingWrong": "Something went wrong. Please try again.",
+
+  "appOutsideWorkSite": "You are outside the work site",
+  "appOutsideWorkSiteBlocked": "You're outside the work site — the punch can't be recorded from here.",
+  "appNoConnectionPunchQueued": "No connection — the punch was saved and will send automatically",
+  "appNoFingerprintEnrolled": "No fingerprint is enrolled on this device.",
+  "appConfirmFingerprintReason": "Confirm your fingerprint to punch",
+  "appFingerprintNotRecognised": "Fingerprint not recognised. Try again.",
+  "appCheckedIn": "Checked in{time}",
+  "@appCheckedIn": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "appCheckedOut": "Checked out{time}",
+  "@appCheckedOut": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+
+  "statusNotPunched": "Not punched",
+  "statusIn": "In",
+  "statusInSince": "In since {time}",
+  "@statusInSince": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "statusInOut": "In {start} — Out {end}",
+  "@statusInOut": {
+    "placeholders": { "start": { "type": "String" }, "end": { "type": "String" } }
+  },
+  "statusInAt": "In {time}",
+  "@statusInAt": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+
+  "attendanceScreenTitle": "Attendance history",
+  "attendanceDailyLog": "Daily log",
+  "attendanceEntriesCount": "{count} {count, plural, one{entry} other{entries}}",
+  "@attendanceEntriesCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "attendanceCouldNotLoad": "Could not load attendance",
+  "attendanceNoRecords": "No attendance records",
+  "attendanceNoRecordsMsg": "There is nothing logged for the selected dates.",
+  "attendanceStart": "START",
+  "attendanceEnd": "END",
+  "attendanceLate": "Late",
+  "attendanceByDevice": "By Device",
+  "attendanceByMobile": "By Mobile",
+
+  "tasksTitle": "My tasks",
+  "tasksProjects": "Projects",
+  "tasksCouldNotLoad": "Could not load tasks",
+  "tasksNoneAssigned": "No tasks assigned",
+  "tasksNoneAssignedMsg": "New work assigned to you will show up here.",
+  "tasksNoneAssignedMemberMsg": "Nothing is assigned to this person right now.",
+  "tasksThisWeek": "THIS WEEK",
+  "tasksKeepMomentum": "Keep the momentum",
+  "tasksDoneOfTotal": "/ {total} done",
+  "@tasksDoneOfTotal": {
+    "placeholders": { "total": { "type": "int" } }
+  },
+  "tasksCount": "{count} {count, plural, one{task} other{tasks}}",
+  "@tasksCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "tasksClient": "Client",
+  "tasksDescription": "Description",
+  "tasksAttachments": "Attachments",
+  "tasksCouldNotLoadAttachments": "Could not load the attachments.",
+  "tasksCouldNotOpenAttachment": "Could not open the file.",
+  "tasksMarkDone": "Mark done ✓",
+  "tasksDelete": "Delete",
+  "tasksDeleteConfirmTitle": "Delete this task?",
+  "tasksDeleteConfirmMsg": "The task and its attachments will be permanently deleted.",
+
+  "notificationsTitle": "Notifications",
+  "notificationsClearAllTitle": "Clear all notifications?",
+  "notificationsClearAll": "Clear all",
+  "notificationsUpdates": "Updates",
+  "notificationsCouldNotLoad": "Could not load notifications",
+  "notificationsNothingNew": "Nothing new",
+  "notificationsNothingNewMsg": "Announcements and updates will appear here.",
+  "notificationsCouldNotDismiss": "Could not dismiss the notification.",
+  "notificationsCouldNotClear": "Could not clear notifications.",
+  "notificationsReadAll": "Mark all as read",
+  "notificationsCouldNotMarkRead": "Could not mark notifications as read.",
+
+  "transportationTitle": "Daily expenses",
+  "transportationEntrySaved": "Entry saved.",
+  "transportationOpenReport": "Open report",
+  "transportationOpenReportPdf": "Open report (PDF)",
+  "transportationCouldNotGenerateReport": "Could not generate the report.",
+  "transportationDeleteTitle": "Delete this entry?",
+  "transportationDelete": "Delete",
+  "transportationEntryDeleted": "Entry deleted.",
+  "transportationCouldNotDelete": "Could not delete the entry.",
+  "transportationEntriesLabel": "Entries",
+  "transportationTotal": "TOTAL",
+  "transportationDistance": "DISTANCE",
+  "transportationEntriesMetric": "ENTRIES",
+  "transportationCouldNotLoadEntries": "Could not load entries",
+  "transportationNoEntries": "No entries yet",
+  "transportationNoEntriesMsg": "Tap + to log a trip with its KM, clients and total.",
+  "transportationNoEntriesMember": "No entries",
+  "transportationNoTripsMemberMsg": "No trips were logged in the selected dates.",
+  "transportationDeleteEntryTooltip": "Delete entry",
+  "transportationReportTitle": "Report",
+
+  "editorEditEntry": "Edit entry",
+  "editorNewEntry": "New entry",
+  "editorTransactionLabel": "TRANSACTION",
+  "editorDate": "Date",
+  "editorKm": "KM",
+  "editorTotal": "Total",
+  "editorNotes": "Notes",
+  "editorClientsLabel": "CLIENTS",
+  "editorAddClient": "Add Client",
+  "editorNoClients": "No clients attached to this trip yet.",
+  "editorSaving": "Saving…",
+  "editorSaveEntry": "Save entry",
+  "editorCouldNotSave": "Could not save the entry.",
+  "editorRequired": "Required",
+  "editorEnterNumber": "Enter a number",
+  "editorAddClientTitle": "Add client",
+  "editorSearchClients": "Search clients",
+  "editorNoClientsAvailable": "No clients available",
+  "editorNoMatches": "No matches",
+  "editorClientListFailed": "The client list could not be loaded.",
+  "editorTryDifferentSearch": "Try a different search term.",
+
+  "profileTitle": "Profile",
+  "profileSignOutTitle": "Sign out?",
+  "profileSignOutMsg": "You will need your username and password to sign back in.",
+  "profileSignOut": "Sign out",
+  "profileWorkspace": "Workspace",
+  "profileTeamRequestsSub": "Approve or reject your team's requests",
+  "profileAccount": "Account",
+  "profileUserId": "User ID",
+  "profileServer": "Server",
+  "profileSignOutSub": "End this session on this device",
+  "profileLanguage": "Language",
+  "profileLanguageSub": "Switch the app between English and Arabic",
+
+  "memberViewOnly": "View only",
+  "memberTabAttendance": "Attendance",
+  "memberTabLeaves": "Leaves",
+  "memberTabTasks": "Tasks",
+  "memberTabTransportation": "Transportation",
+  "memberToday": "Today",
+  "memberCouldNotLoadLeaveRequests": "Could not load leave requests",
+  "memberNoLeaveRequests": "No leave requests",
+  "requestsInRangeMsg": "Requests in the selected dates will appear here.",
+
+  "teamTitle": "My Team",
+  "teamCouldNotLoadBoard": "Could not load the team board",
+  "teamNoMembers": "No team members",
+  "teamNoMembersMsg": "People who report to you will appear here.",
+
+  "teamLeaveTitle": "Team requests",
+  "teamLeaveApproveTitle": "Approve this request?",
+  "teamLeaveApprove": "Approve",
+  "teamLeaveApproved": "Request approved",
+  "teamLeaveRejected": "Request rejected",
+  "teamLeaveForbidden": "You do not have permission for this request",
+  "teamLeaveAlreadyDecided": "A decision was already made on this request",
+  "teamLeaveNotFound": "This request no longer exists",
+  "teamLeaveFailed": "Could not complete the request",
+  "teamLeaveRequestsLabel": "Requests",
+  "teamLeaveAllDates": "All dates",
+  "teamLeaveAllEmployees": "All employees",
+  "teamLeaveNoRequests": "No requests",
+  "teamLeaveMatchingMsg": "Requests matching these filters will appear here.",
+  "teamLeaveCouldNotLoad": "Could not load team requests",
+  "rejectionReason": "Rejection reason: {reason}",
+  "@rejectionReason": {
+    "placeholders": { "reason": { "type": "String" } }
+  },
+  "teamLeaveReject": "Reject",
+  "teamLeaveWaitingDirectManager": "Waiting on the direct manager's decision",
+  "teamLeaveRejectDialogTitle": "Reject request",
+  "teamLeaveRejectionHint": "Rejection reason",
+  "teamLeaveReasonRequired": "A reason is required",
+
+  "filterAll": "All",
+  "statusPending": "Pending",
+  "statusApproved": "Approved",
+  "statusRejected": "Rejected",
+  "leaveKindLeaving": "Leaving",
+  "leaveKindVacation": "Vacation",
+
+  "leaveTitle": "Leave & vacation",
+  "leaveTakePhoto": "Take a photo",
+  "leaveChooseFromGallery": "Choose from gallery",
+  "leaveMedicalReportAttached": "Medical report attached.",
+  "leaveCouldNotAttach": "Could not attach the report.",
+  "leaveRequestSentToManager": "Request sent to your manager",
+  "leaveAttachMedicalTitle": "Attach the medical report?",
+  "leaveAttachLaterMsg": "You can also attach it later from the request card.",
+  "leaveLater": "Later",
+  "leaveAttachNow": "Attach now",
+  "leaveCancelRequestTitle": "Cancel this request?",
+  "leaveKeep": "Keep",
+  "leaveCancelRequest": "Cancel request",
+  "leaveRequestCancelled": "Request cancelled.",
+  "leaveCouldNotCancel": "Could not cancel the request.",
+  "leaveKindRequests": "{kind} requests",
+  "@leaveKindRequests": {
+    "placeholders": { "kind": { "type": "String" } }
+  },
+  "leaveNewRequest": "New request",
+  "leaveCouldNotLoadRequests": "Could not load requests",
+  "leaveNoKindRequests": "No {kind} requests",
+  "@leaveNoKindRequests": {
+    "placeholders": { "kind": { "type": "String" } }
+  },
+  "leaveNoVacationBalance": "No vacation balance set for this year.",
+  "leaveRemainingOf": "{count, plural, one{1 day} other{{count} days}} remaining of",
+  "@leaveRemainingOf": {
+    "placeholders": { "count": { "type": "num" } }
+  },
+  "leaveAttachMedicalReportTooltip": "Attach medical report",
+  "leaveAttachmentsTitle": "Attachments",
+  "leaveCouldNotLoadAttachments": "Could not load the attachments.",
+  "leaveNoAttachments": "No attachments yet.",
+  "leaveViewMedicalReport": "View medical report",
+  "durationHours": "{count, plural, one{{count} hour} other{{count} hours}}",
+  "@durationHours": {
+    "placeholders": { "count": { "type": "num" } }
+  },
+  "durationDays": "{count, plural, one{{count} day} other{{count} days}}",
+  "@durationDays": {
+    "placeholders": { "count": { "type": "num" } }
+  },
+  "leaveApprovedBy": "Approved by {name}",
+  "@leaveApprovedBy": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "leaveDetailTitle": "Request details",
+  "leaveDetailCouldNotLoad": "Could not load the request",
+  "leavePendingWith": "Pending with: {name}",
+  "@leavePendingWith": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "leaveStepsTitle": "Request history",
+  "leaveStepSubmitted": "{name} submitted the request",
+  "@leaveStepSubmitted": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "leaveStepForwarded": "{from} forwarded it to {to}",
+  "@leaveStepForwarded": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "leaveStepApproved": "{name} approved the request",
+  "@leaveStepApproved": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "leaveStepRejected": "{name} rejected the request",
+  "@leaveStepRejected": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "leaveForwardTo": "Forward to {name}",
+  "@leaveForwardTo": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "leaveForwardNoteHint": "Optional note",
+  "leaveForwardButton": "Forward",
+  "leaveForwarded": "Request forwarded.",
+  "leaveWithdraw": "Withdraw",
+  "leaveWithdrawConfirmTitle": "Withdraw this request?",
+
+  "leaveEditorChooseType": "Choose a type for this request.",
+  "leaveEditorEndBeforeStart": "The end date cannot be before the start date.",
+  "leaveEditorCouldNotSubmit": "Could not submit the request.",
+  "leaveEditorFrom": "From",
+  "leaveEditorTo": "To",
+  "leaveEditorSubmitting": "Submitting…",
+  "leaveEditorSubmitRequest": "Submit request",
+  "leaveEditorConflictsTitle": "Teammates off at the same time",
+  "leaveEditorConflictLine": "{name} is off in the same window ({from} → {to})",
+  "@leaveEditorConflictLine": {
+    "placeholders": { "name": { "type": "String" }, "from": { "type": "String" }, "to": { "type": "String" } }
+  },
+  "leaveEditorSubmitAnyway": "Submit anyway",
+  "leaveEditorType": "Type",
+  "leaveEditorNoTypesAvailable": "No types available",
+  "leaveEditorChooseTypeValidator": "Choose a type",
+
+  "leaveWorkLeavingClientsLabel": "Which client are you going to?",
+  "leaveChooseClientRequired": "Choose the client you're going to"
+}

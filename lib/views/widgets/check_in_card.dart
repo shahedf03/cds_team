@@ -5,16 +5,18 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/api_formats.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/mobile_check_in.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/auth_provider.dart';
 import 'common.dart';
 
-/// §10 — the fingerprint "Check in" / "Check out" control on Home.
+/// §10 — the one fingerprint button on Home.
 ///
-/// The on-device match must succeed before a check-in call happens. While
-/// `GET /api/attendance/today` reports an open session the button flips to
-/// "Check out" and a live "checked in since…" timer runs.
+/// Works like the wall terminal: the day's first punch is Start, every later
+/// punch moves End. The button never changes; below it sits
+/// "In … — Out …", a live "since …" timer while there's only a Start, or
+/// "No punch recorded today".
 class CheckInCard extends StatefulWidget {
   const CheckInCard({super.key});
 
@@ -23,8 +25,21 @@ class CheckInCard extends StatefulWidget {
 }
 
 class _CheckInCardState extends State<CheckInCard> {
-  // Repaints the elapsed timer; the value itself comes from the provider.
+  // Repaints the live "since…" timer.
   late final Timer _ticker;
+
+  Future<void> _punch(String userId) async {
+    final AttendanceProvider provider = context.read<AttendanceProvider>();
+    await provider.punch(userId: userId, t: AppLocalizations.of(context));
+    if (!mounted) return;
+    final String? message = provider.punchMessage;
+    if (message == null) return;
+    showApiSnack(
+      context,
+      message,
+      isError: provider.punchStatus == PunchStatus.failed,
+    );
+  }
 
   @override
   void initState() {
@@ -42,20 +57,16 @@ class _CheckInCardState extends State<CheckInCard> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     final AttendanceProvider attendance = context.watch<AttendanceProvider>();
     final AuthProvider auth = context.watch<AuthProvider>();
-    final CheckInStatus status = attendance.checkInStatus;
-    final bool open = attendance.hasOpenSession;
-
-    final bool busy = status == CheckInStatus.working;
+    final PunchStatus status = attendance.punchStatus;
+    final bool busy = status == PunchStatus.working;
 
     VoidCallback? onPressed;
     if (!busy && auth.user != null) {
       final String userId = auth.user!.userId;
-      final AttendanceProvider provider = context.read<AttendanceProvider>();
-      onPressed = open
-          ? () => provider.checkOut(userId: userId)
-          : () => provider.checkIn(userId: userId);
+      onPressed = () => _punch(userId);
     }
 
     return GlassCard(
@@ -69,7 +80,7 @@ class _CheckInCardState extends State<CheckInCard> {
           children: <Widget>[
             Row(
               children: <Widget>[
-                const Text('ATTENDANCE', style: _kicker),
+                Text(t.checkInAttendance, style: _kicker),
                 const Spacer(),
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -89,9 +100,9 @@ class _CheckInCardState extends State<CheckInCard> {
                       ),
                     ),
                     const SizedBox(width: 7),
-                    const Text(
-                      'Live',
-                      style: TextStyle(
+                    Text(
+                      t.checkInLive,
+                      style: const TextStyle(
                         fontSize: 10,
                         letterSpacing: 1.2,
                         fontWeight: FontWeight.w800,
@@ -103,72 +114,39 @@ class _CheckInCardState extends State<CheckInCard> {
               ],
             ),
             const SizedBox(height: 6),
-            _FingerprintButton(
-              done: open,
-              busy: busy,
-              onPressed: onPressed,
-            ),
+            _FingerprintButton(busy: busy, onPressed: onPressed),
             const SizedBox(height: 4),
             Text(
-              _title(status, open),
+              busy ? t.checkInVerifying : t.checkInTapToPunch,
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
                 color: AppColors.ink,
               ),
             ),
-            const SizedBox(height: 4),
-            Directionality(
-              textDirection: TextDirection.rtl,
-              child: Text(
-                _titleAr(status, open),
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFF83908E),
-                ),
-              ),
-            ),
             const SizedBox(height: 11),
-            if (open)
-              _Elapsed(
-                elapsed: attendance.sessionElapsed,
-                since: attendance.today.checkInAt,
-              )
+            if (attendance.dayStart == null)
+              const _NoPunchYet()
             else
-              _Clock(at: attendance.checkedInAt),
+              _DayPunches(
+                start: attendance.dayStart!,
+                end: attendance.dayEnd,
+                elapsed: attendance.isOpen ? attendance.elapsed : null,
+              ),
             const SizedBox(height: 10),
             _StatusFooter(
               status: status,
-              open: open,
-              message: attendance.checkInMessage,
-              withinGeofence:
-                  attendance.today.withinGeofence ?? attendance.withinGeofence,
-              siteName: attendance.today.siteName,
+              message: attendance.punchMessage,
+              punchedToday: attendance.dayStart != null,
+              pendingCount: attendance.pendingCount,
+              withinGeofence: attendance.withinGeofence,
+              siteName:
+                  attendance.lastResult?.siteName ?? attendance.today.siteName,
             ),
           ],
         ),
       ),
     );
-  }
-
-  static String _title(CheckInStatus status, bool open) {
-    if (status == CheckInStatus.working) return 'Verifying…';
-    if (open) return 'Checked in · tap to check out';
-    return switch (status) {
-      CheckInStatus.checkedOut => 'Checked out successfully',
-      CheckInStatus.failed => 'Something went wrong',
-      _ => 'Tap to check in',
-    };
-  }
-
-  static String _titleAr(CheckInStatus status, bool open) {
-    if (status == CheckInStatus.working) return 'جارٍ التحقق…';
-    if (open) return 'تم تسجيل الحضور · اضغط لتسجيل الانصراف';
-    return switch (status) {
-      CheckInStatus.checkedOut => 'تم تسجيل الانصراف',
-      CheckInStatus.failed => 'لم تتم العملية',
-      _ => 'بصمة الحضور',
-    };
   }
 
   static const TextStyle _kicker = TextStyle(
@@ -180,13 +158,8 @@ class _CheckInCardState extends State<CheckInCard> {
 }
 
 class _FingerprintButton extends StatefulWidget {
-  const _FingerprintButton({
-    required this.done,
-    required this.busy,
-    required this.onPressed,
-  });
+  const _FingerprintButton({required this.busy, required this.onPressed});
 
-  final bool done;
   final bool busy;
   final VoidCallback? onPressed;
 
@@ -209,7 +182,7 @@ class _FingerprintButtonState extends State<_FingerprintButton>
 
   @override
   Widget build(BuildContext context) {
-    final bool animate = !widget.done;
+    final bool animate = !widget.busy;
 
     return SizedBox(
       height: 131,
@@ -249,14 +222,11 @@ class _FingerprintButtonState extends State<_FingerprintButton>
                   height: 79,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: widget.done
-                        ? null
-                        : const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: <Color>[AppColors.green, AppColors.deep],
-                          ),
-                    color: widget.done ? AppColors.deep : null,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: <Color>[AppColors.green, AppColors.deep],
+                    ),
                     boxShadow: <BoxShadow>[
                       BoxShadow(
                         color: AppColors.green.withValues(alpha: 0.33),
@@ -275,10 +245,8 @@ class _FingerprintButtonState extends State<_FingerprintButton>
                             color: Colors.white,
                           ),
                         )
-                      : Icon(
-                          widget.done
-                              ? Icons.logout_rounded
-                              : Icons.fingerprint_rounded,
+                      : const Icon(
+                          Icons.fingerprint_rounded,
                           size: 36,
                           color: Colors.white,
                         ),
@@ -293,14 +261,13 @@ class _FingerprintButtonState extends State<_FingerprintButton>
 }
 
 class _Clock extends StatelessWidget {
-  const _Clock({this.at});
+  const _Clock({required this.at});
 
-  final DateTime? at;
+  final DateTime at;
 
   @override
   Widget build(BuildContext context) {
-    final DateTime value = at ?? DateTime.now();
-    final List<String> parts = ApiFormats.clockTime.format(value).split(' ');
+    final List<String> parts = ApiFormats.clockTime.format(at).split(' ');
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -326,84 +293,155 @@ class _Clock extends StatelessWidget {
   }
 }
 
-/// `3h 20m` — live while a session is open.
-class _Elapsed extends StatelessWidget {
-  const _Elapsed({required this.elapsed, this.since});
-
-  final Duration elapsed;
-  final DateTime? since;
+/// "No punch recorded today".
+class _NoPunchYet extends StatelessWidget {
+  const _NoPunchYet();
 
   @override
   Widget build(BuildContext context) {
-    final int hours = elapsed.inHours;
-    final int minutes = elapsed.inMinutes.remainder(60);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Text(
+        AppLocalizations.of(context).checkInNoPunchToday,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF8C9895),
+        ),
+      ),
+    );
+  }
+}
 
+/// "In … — Out …", with a live "since …" timer while there's only a Start.
+class _DayPunches extends StatelessWidget {
+  const _DayPunches({required this.start, this.end, this.elapsed});
+
+  final DateTime start;
+  final DateTime? end;
+
+  /// Set only while the day has a single punch.
+  final Duration? elapsed;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     return Column(
       children: <Widget>[
-        Text(
-          hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m',
-          style: const TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -1,
-            color: AppColors.ink,
-          ),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                children: <Widget>[
+                  _Clock(at: start),
+                  Text(t.checkInIn, style: _caption),
+                ],
+              ),
+            ),
+            Container(width: 1, height: 34, color: const Color(0x1F17332E)),
+            Expanded(
+              child: Column(
+                children: <Widget>[
+                  if (end != null)
+                    _Clock(at: end!)
+                  else
+                    const Text(
+                      '--:--',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1,
+                        color: Color(0xFFB5BEBB),
+                      ),
+                    ),
+                  Text(t.checkInOut, style: _caption),
+                ],
+              ),
+            ),
+          ],
         ),
-        if (since != null)
+        if (elapsed != null) ...<Widget>[
+          const SizedBox(height: 6),
           Text(
-            'since ${ApiFormats.clockTime.format(since!)}',
-            style: const TextStyle(fontSize: 11, color: Color(0xFF8C9895)),
+            t.checkInElapsedSince(
+              _duration(t, elapsed!),
+              ApiFormats.clockTime.format(start),
+            ),
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.green,
+            ),
           ),
+        ],
       ],
     );
   }
+
+  static String _duration(AppLocalizations t, Duration d) {
+    final int hours = d.inHours;
+    final int minutes = d.inMinutes.remainder(60);
+    return hours > 0
+        ? t.checkInDurationHoursMinutes(hours, minutes)
+        : t.checkInDurationMinutes(minutes);
+  }
+
+  static const TextStyle _caption = TextStyle(
+    fontSize: 11,
+    color: Color(0xFF8C9895),
+  );
 }
 
 class _StatusFooter extends StatelessWidget {
   const _StatusFooter({
     required this.status,
-    required this.open,
     required this.message,
+    required this.punchedToday,
+    required this.pendingCount,
     required this.withinGeofence,
     this.siteName,
   });
 
-  final CheckInStatus status;
-  final bool open;
+  final PunchStatus status;
   final String? message;
+  final bool punchedToday;
+  final int pendingCount;
   final bool? withinGeofence;
   final String? siteName;
 
   @override
   Widget build(BuildContext context) {
-    if (status == CheckInStatus.failed) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    if (status == PunchStatus.failed) {
       return _Banner(
         tone: ToneColor.red,
         icon: Icons.error_outline_rounded,
-        text: message ?? 'Something went wrong. Please try again.',
+        text: message ?? t.checkInSomethingWrong,
       );
     }
 
-    if (open) {
-      final bool inside = withinGeofence ?? true;
-      final String where = inside ? 'Inside geofence' : 'Outside geofence';
+    if (pendingCount > 0) {
+      return _Banner(
+        tone: ToneColor.amber,
+        icon: Icons.cloud_upload_outlined,
+        text: t.checkInPending(pendingCount),
+      );
+    }
+
+    // `null` on terminal-only days — nothing to claim either way. A phone
+    // punch can no longer be outside every site (§H, 2026-10-05: the server
+    // rejects it with a 400 instead of saving it), so there's no "outside"
+    // case left to show here.
+    if (punchedToday && withinGeofence == true) {
       return StatusChip(
-        label: siteName == null ? where : '$where · $siteName',
-        tone: inside ? ToneColor.green : ToneColor.amber,
+        label: siteName == null ? t.checkInInsideGeofence : t.checkInInsideSite(siteName!),
+        tone: ToneColor.green,
         icon: Icons.location_on_outlined,
       );
     }
 
-    if (status == CheckInStatus.checkedOut) {
-      return const StatusChip(
-        label: 'Checked out',
-        tone: ToneColor.blue,
-        icon: Icons.logout_rounded,
-      );
-    }
-
-    return const StatusChip(
-      label: 'Fingerprint required',
+    return StatusChip(
+      label: t.checkInFingerprintRequired,
       tone: ToneColor.green,
       icon: Icons.verified_user_outlined,
     );

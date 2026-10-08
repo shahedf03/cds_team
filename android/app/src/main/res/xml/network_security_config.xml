@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  CdsTeam_Api (see AppConfig.apiBaseUrl) has no TLS certificate yet, so
+  release builds — which block cleartext HTTP by default from targetSdk 28
+  on — would otherwise fail every request. This opens plain HTTP for exactly
+  that host, never the whole app, so every other domain still requires TLS.
+  Drop this file (and the manifest reference to it) the day the API moves to
+  https://.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">olives.cds.jo</domain>
+        <domain includeSubdomains="false">10.0.10.105</domain>
+    </domain-config>
+</network-security-config>

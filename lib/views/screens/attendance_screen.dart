@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/api_formats.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../models/attendance_record.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -51,31 +52,43 @@ class AttendanceScreen extends StatelessWidget {
   Future<void> _refresh(BuildContext context) async {
     final AuthProvider auth = context.read<AuthProvider>();
     if (auth.user == null) return;
-    await context.read<AttendanceProvider>().load(
+    await context.read<AttendanceProvider>().load(userId: auth.user!.userId);
+  }
+
+  Future<void> _setSource(BuildContext context, AttendanceSource source) async {
+    final AuthProvider auth = context.read<AuthProvider>();
+    if (auth.user == null) return;
+    await context.read<AttendanceProvider>().setSource(
+      source,
       userId: auth.user!.userId,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     final AttendanceProvider provider = context.watch<AttendanceProvider>();
 
     final Widget body = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        if (!embedded) const CdsAppBar(title: 'Attendance history'),
+        if (!embedded) CdsAppBar(title: t.attendanceScreenTitle),
         DateRangePill(
           fromLabel: ApiFormats.displayDate.format(provider.range.from),
           toLabel: ApiFormats.displayDate.format(provider.range.to),
           onTap: () => _pickRange(context),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
+        _SourceTabs(
+          value: provider.source,
+          onChanged: (AttendanceSource source) => _setSource(context, source),
+        ),
+        const SizedBox(height: 12),
         ListLabel(
-          label: 'Daily log',
+          label: t.attendanceDailyLog,
           trailing: provider.records.isEmpty
               ? null
-              : '${provider.records.length} '
-                    '${provider.records.length == 1 ? 'entry' : 'entries'}',
+              : t.attendanceEntriesCount(provider.records.length),
         ),
         Expanded(
           child: RefreshIndicator(
@@ -108,6 +121,57 @@ class AttendanceScreen extends StatelessWidget {
   }
 }
 
+/// بصمة الجهاز / بصمة الموبايل — each tab is its own `source=` call
+/// ([AttendanceProvider.setSource]), same From/To range for both.
+class _SourceTabs extends StatelessWidget {
+  const _SourceTabs({required this.value, required this.onChanged});
+
+  final AttendanceSource value;
+  final ValueChanged<AttendanceSource> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0x99FFFFFF),
+        border: Border.all(color: Colors.white),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: AttendanceSource.values.map((AttendanceSource source) {
+          final bool active = source == value;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onChanged(source),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                decoration: BoxDecoration(
+                  color: active ? AppColors.ink : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  source == AttendanceSource.device
+                      ? t.attendanceByDevice
+                      : t.attendanceByMobile,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: active ? Colors.white : AppColors.muted,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
 class _Body extends StatelessWidget {
   const _Body({required this.provider, required this.onRetry});
 
@@ -116,6 +180,7 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     if (provider.isLoading && provider.records.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.green),
@@ -128,10 +193,10 @@ class _Body extends StatelessWidget {
           StateMessage(
             icon: Icons.cloud_off_rounded,
             tone: ToneColor.red,
-            title: 'Could not load attendance',
+            title: t.attendanceCouldNotLoad,
             // The API's own `error` message, not a generic one.
             message: provider.error,
-            actionLabel: 'Try again',
+            actionLabel: t.commonTryAgain,
             onAction: onRetry,
           ),
         ],
@@ -140,11 +205,11 @@ class _Body extends StatelessWidget {
 
     if (provider.records.isEmpty) {
       return ListView(
-        children: const <Widget>[
+        children: <Widget>[
           StateMessage(
             icon: Icons.event_busy_rounded,
-            title: 'No attendance records',
-            message: 'There is nothing logged for the selected dates.',
+            title: t.attendanceNoRecords,
+            message: t.attendanceNoRecordsMsg,
           ),
         ],
       );
@@ -156,21 +221,24 @@ class _Body extends StatelessWidget {
       itemCount: provider.records.length,
       separatorBuilder: (_, _) => const SizedBox(height: 7),
       itemBuilder: (BuildContext context, int index) =>
-          _AttendanceRow(record: provider.records[index]),
+          AttendanceRow(record: provider.records[index]),
     );
   }
 }
 
-class _AttendanceRow extends StatelessWidget {
-  const _AttendanceRow({required this.record});
+class AttendanceRow extends StatelessWidget {
+  const AttendanceRow({super.key, required this.record});
 
   final AttendanceRecord record;
 
   @override
   Widget build(BuildContext context) {
-    // The red-highlight rule stays client-side — the API does not compute
-    // "late" yet.
+    final AppLocalizations t = AppLocalizations.of(context);
+    // Server-computed since 2026-10-05 (Start after Attendance:LateAfter).
     final bool late = record.isLate;
+
+    // Only phone punches carry this — always null on a pure device-tab row.
+    final bool outsideSite = record.withinGeofence == false;
 
     return Container(
       constraints: const BoxConstraints(minHeight: 68),
@@ -178,54 +246,84 @@ class _AttendanceRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: late ? AppColors.lateRow : AppColors.cardSolid,
         border: Border.all(
-          color: late ? AppColors.lateRowBorder : Colors.white,
+          color: late ? AppColors.red : AppColors.green,
+          width: 1.4,
         ),
         borderRadius: BorderRadius.circular(17),
-      ),
-      child: Row(
-        children: <Widget>[
-          Container(
-            width: 46,
-            padding: const EdgeInsets.only(right: 10),
-            decoration: const BoxDecoration(
-              border: Border(right: BorderSide(color: AppColors.line)),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: (late ? AppColors.red : AppColors.green).withValues(
+              alpha: late ? 0.22 : 0.14,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  record.dayNumber,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.ink,
-                  ),
-                ),
-                Text(
-                  record.monthLabel,
-                  style: const TextStyle(
-                    fontSize: 9,
-                    color: Color(0xFF8B9693),
-                  ),
-                ),
-              ],
-            ),
+            blurRadius: late ? 16 : 10,
+            offset: const Offset(0, 6),
           ),
-          const SizedBox(width: 12),
-          Expanded(child: _LogTime(label: 'START', value: record.startLabel)),
-          Expanded(child: _LogTime(label: 'END', value: record.endLabel)),
-          if (late)
-            const StatusChip(
-              label: 'Late',
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Container(
+                width: 46,
+                padding: const EdgeInsets.only(right: 10),
+                decoration: const BoxDecoration(
+                  border: Border(right: BorderSide(color: AppColors.line)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      record.dayNumber,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    Text(
+                      record.monthLabel,
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: Color(0xFF8B9693),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _LogTime(
+                  label: t.attendanceStart,
+                  value: record.startLabel,
+                ),
+              ),
+              Expanded(
+                child: _LogTime(label: t.attendanceEnd, value: record.endLabel),
+              ),
+              if (late)
+                StatusChip(
+                  label: t.attendanceLate,
+                  tone: ToneColor.red,
+                  icon: Icons.bolt_rounded,
+                )
+              else
+                const Icon(
+                  Icons.check_rounded,
+                  size: 17,
+                  color: AppColors.green,
+                ),
+            ],
+          ),
+          if (outsideSite) ...<Widget>[
+            const SizedBox(height: 8),
+            StatusChip(
+              label: t.appOutsideWorkSite,
               tone: ToneColor.red,
-              icon: Icons.bolt_rounded,
-            )
-          else
-            const Icon(
-              Icons.check_rounded,
-              size: 17,
-              color: AppColors.green,
+              icon: Icons.location_off_rounded,
             ),
+          ],
         ],
       ),
     );

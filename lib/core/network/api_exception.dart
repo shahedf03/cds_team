@@ -22,6 +22,13 @@ class ApiException implements Exception {
   /// Bad input — show [message] against the offending field.
   bool get isBadRequest => statusCode == 400;
 
+  /// Authenticated but not allowed (e.g. approving someone else's team's
+  /// leave). Never a reason to log out — only 401 is.
+  bool get isForbidden => statusCode == 403;
+
+  /// The record is gone (e.g. a leave request deleted before approval).
+  bool get isNotFound => statusCode == 404;
+
   /// Endpoint exists but the backend hasn't enabled it yet (see §10).
   /// Screens should render a "Coming soon" state, not an error.
   bool get isNotImplemented => statusCode == 501;

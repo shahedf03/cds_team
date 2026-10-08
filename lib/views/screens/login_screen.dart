@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/common.dart';
@@ -49,6 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     final AuthProvider auth = context.watch<AuthProvider>();
 
     return Scaffold(
@@ -71,11 +73,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
-                          const Text('WELCOME BACK', style: _eyebrow),
+                          Text(t.loginWelcomeBack, style: _eyebrow),
                           const SizedBox(height: 6),
-                          const Text(
-                            'Sign in to continue',
-                            style: TextStyle(
+                          Text(
+                            t.loginSignInToContinue,
+                            style: const TextStyle(
                               fontSize: 21,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.5,
@@ -85,26 +87,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 22),
                           _Field(
                             controller: _username,
-                            label: 'Username',
+                            label: t.loginUsername,
                             icon: Icons.person_outline_rounded,
                             textInputAction: TextInputAction.next,
                             onSubmitted: (_) => _passwordFocus.requestFocus(),
                             validator: (String? v) =>
                                 (v == null || v.trim().isEmpty)
-                                ? 'Enter your username'
+                                ? t.loginEnterUsername
                                 : null,
                           ),
                           const SizedBox(height: 14),
                           _Field(
                             controller: _password,
                             focusNode: _passwordFocus,
-                            label: 'Password',
+                            label: t.loginPassword,
                             icon: Icons.lock_outline_rounded,
                             obscure: _obscure,
                             textInputAction: TextInputAction.done,
                             onSubmitted: (_) => _submit(),
                             validator: (String? v) => (v == null || v.isEmpty)
-                                ? 'Enter your password'
+                                ? t.loginEnterPassword
                                 : null,
                             suffix: IconButton(
                               icon: Icon(
@@ -145,9 +147,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                         color: Colors.white,
                                       ),
                                     )
-                                  : const Text(
-                                      'Sign in',
-                                      style: TextStyle(
+                                  : Text(
+                                      t.loginSignIn,
+                                      style: const TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w800,
                                       ),
@@ -158,10 +160,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 26),
-                    const Center(
+                    Center(
                       child: Text(
-                        'Cloud Data Solutions · Internal use only',
-                        style: TextStyle(fontSize: 10, color: AppColors.muted),
+                        t.loginFooter,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.muted,
+                        ),
                       ),
                     ),
                   ],

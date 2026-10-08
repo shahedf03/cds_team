@@ -5,6 +5,7 @@ import '../core/storage/session_store.dart';
 import '../core/storage/token_store.dart';
 import '../models/auth/auth_user.dart';
 import '../services/auth_service.dart';
+import '../services/push_service.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
@@ -14,13 +15,16 @@ class AuthProvider extends ChangeNotifier {
     required AuthService service,
     required TokenStore tokenStore,
     required SessionStore sessionStore,
+    required PushService push,
   }) : _service = service,
        _tokenStore = tokenStore,
-       _sessionStore = sessionStore;
+       _sessionStore = sessionStore,
+       _push = push;
 
   final AuthService _service;
   final TokenStore _tokenStore;
   final SessionStore _sessionStore;
+  final PushService _push;
 
   AuthStatus _status = AuthStatus.unknown;
   AuthUser? _user;
@@ -59,7 +63,11 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final String playerId = await _sessionStore.readPlayerId();
+      // The server pushes to whatever id this login carries, so prefer the
+      // live OneSignal id (waiting briefly on a fresh install) over "0".
+      final String? liveId = await _push.subscriptionId();
+      if (liveId != null) await _sessionStore.savePlayerId(liveId);
+      final String playerId = liveId ?? await _sessionStore.readPlayerId();
       final LoginResult result = await _service.login(
         username: username.trim(),
         password: password,
@@ -107,8 +115,4 @@ class AuthProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
   }
-
-  /// Carry over the push player id once the device registers for push.
-  Future<void> updatePlayerId(String playerId) =>
-      _sessionStore.savePlayerId(playerId);
 }

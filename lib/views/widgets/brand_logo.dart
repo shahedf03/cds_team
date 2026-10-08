@@ -1,102 +1,20 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
-
-/// The two interlocking rings + "CDS TEAM / CLOUD DATA SOLUTIONS" lockup.
+/// The Cloud Data Solutions logo (`assets/brand/cds_logo.png`).
 class BrandLogo extends StatelessWidget {
-  const BrandLogo({super.key, this.scale = 1, this.onDark = false});
+  const BrandLogo({super.key, this.scale = 1});
 
   final double scale;
-  final bool onDark;
+
+  /// Height at `scale == 1`; width follows from the asset's own aspect ratio.
+  static const double _baseHeight = 36;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        _CloudMark(scale: scale, onDark: onDark),
-        SizedBox(width: 8 * scale),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              'CDS TEAM',
-              style: TextStyle(
-                fontSize: 12 * scale,
-                letterSpacing: 1.6 * scale,
-                height: 1.05,
-                fontWeight: FontWeight.w800,
-                color: onDark ? Colors.white : AppColors.ink,
-              ),
-            ),
-            SizedBox(height: 3 * scale),
-            Text(
-              'CLOUD DATA SOLUTIONS',
-              style: TextStyle(
-                fontSize: 6.5 * scale,
-                letterSpacing: 1 * scale,
-                fontWeight: FontWeight.w700,
-                color: onDark ? Colors.white70 : const Color(0xFF77807E),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _CloudMark extends StatelessWidget {
-  const _CloudMark({required this.scale, required this.onDark});
-
-  final double scale;
-  final bool onDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 28 * scale,
-      height: 25 * scale,
-      child: Stack(
-        children: <Widget>[
-          Positioned(
-            left: 0,
-            top: 3 * scale,
-            child: _Ring(scale: scale, color: AppColors.green),
-          ),
-          Positioned(
-            right: 0,
-            top: 3 * scale,
-            child: _Ring(
-              scale: scale,
-              color: onDark ? Colors.white : AppColors.ink,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Ring extends StatelessWidget {
-  const _Ring({required this.scale, required this.color});
-
-  final double scale;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: -0.61, // -35deg
-      child: Container(
-        width: 19 * scale,
-        height: 19 * scale,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: color, width: 4.4 * scale),
-        ),
-      ),
+    return Image.asset(
+      'assets/brand/cds_logo.png',
+      height: _baseHeight * scale,
+      fit: BoxFit.contain,
     );
   }
 }

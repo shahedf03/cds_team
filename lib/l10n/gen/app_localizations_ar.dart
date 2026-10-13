@@ -24,6 +24,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get commonMore => 'المزيد';
 
   @override
+  String get commonSend => 'إرسال';
+
+  @override
   String get loginWelcomeBack => 'أهلاً بعودتك';
 
   @override
@@ -148,6 +151,14 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String dashboardDoneCount(int count) {
     return '$count منجزة';
+  }
+
+  @override
+  String get dashboardFinishedThisMonth => 'منجزة هذا الشهر';
+
+  @override
+  String dashboardOpenedThisMonth(int count) {
+    return '$count فُتحت هذا الشهر';
   }
 
   @override
@@ -425,6 +436,177 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tasksDeleteConfirmMsg => 'سيتم حذف المهمة ومرفقاتها نهائياً.';
+
+  @override
+  String tasksCreatedBy(String name) {
+    return 'أنشأها: $name';
+  }
+
+  @override
+  String get tasksFinishedTitle => 'منجزة هذا الشهر';
+
+  @override
+  String get tasksFinishedEmpty => 'لا توجد مهام منجزة هذا الشهر';
+
+  @override
+  String get tasksFinishedEmptyMsg => 'المهام التي تنجزها هذا الشهر ستظهر هنا.';
+
+  @override
+  String get tasksRemind => 'تذكير';
+
+  @override
+  String tasksReminderSent(String names) {
+    return 'تم إرسال التذكير إلى $names';
+  }
+
+  @override
+  String get commonAnd => ' و ';
+
+  @override
+  String get chatTitle => 'المحادثة';
+
+  @override
+  String chatWith(String name) {
+    return 'مع $name';
+  }
+
+  @override
+  String get chatEmpty => 'لا توجد رسائل بعد';
+
+  @override
+  String get chatEmptyMsg => 'ابدأ المحادثة برسالة.';
+
+  @override
+  String get chatCouldNotLoad => 'تعذّر تحميل المحادثة';
+
+  @override
+  String get chatLocked => 'هذه المحادثة مقفلة.';
+
+  @override
+  String chatLocksAt(String time) {
+    return 'تُقفل في $time';
+  }
+
+  @override
+  String get chatTypeMessage => 'اكتب رسالة…';
+
+  @override
+  String get chatAttach => 'إرفاق ملفات';
+
+  @override
+  String get chatRecordVoice => 'تسجيل رسالة صوتية';
+
+  @override
+  String get chatStopRecording => 'إيقاف التسجيل';
+
+  @override
+  String chatRecording(String time) {
+    return 'جارِ التسجيل… $time';
+  }
+
+  @override
+  String get chatVoiceMessage => '🎤 رسالة صوتية';
+
+  @override
+  String get chatPhoto => '📷 صورة';
+
+  @override
+  String get chatVideo => '🎬 فيديو';
+
+  @override
+  String get chatCouldNotSend => 'تعذّر إرسال الرسالة.';
+
+  @override
+  String get chatCouldNotRecord => 'تعذّر بدء التسجيل.';
+
+  @override
+  String get chatMicPermissionDenied =>
+      'يلزم إذن الميكروفون لتسجيل رسالة صوتية.';
+
+  @override
+  String get chatRemoveFile => 'إزالة';
+
+  @override
+  String get projectsTitle => 'المشاريع';
+
+  @override
+  String get projectsCouldNotLoad => 'تعذّر تحميل المشاريع';
+
+  @override
+  String get projectsEmpty => 'لا توجد مشاريع بعد';
+
+  @override
+  String get projectsDone => 'منجزة';
+
+  @override
+  String get projectsWorking => 'قيد العمل';
+
+  @override
+  String get projectsOpen => 'مفتوحة';
+
+  @override
+  String get projectsOverdue => 'متأخرة';
+
+  @override
+  String projectsDaysLeft(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days يوم متبقي',
+      two: 'يومان متبقيان',
+      one: 'يوم واحد متبقي',
+      zero: 'اليوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get projectsNoSprint => 'بدون سبرنت';
+
+  @override
+  String get projectsSprintEmpty => 'لا توجد مهام بهذا السبرنت';
+
+  @override
+  String get calendarTitle => 'التقويم';
+
+  @override
+  String get calendarTeamTasks => 'مهام الفريق';
+
+  @override
+  String get calendarNothingThisDay => 'لا يوجد شيء بهذا اليوم';
+
+  @override
+  String get calendarAllDay => 'اليوم كامل';
+
+  @override
+  String get calendarPending => 'قيد الانتظار';
+
+  @override
+  String get calendarCouldNotSave => 'تعذّر حفظ الحدث.';
+
+  @override
+  String get calendarNewEvent => 'حدث جديد';
+
+  @override
+  String get calendarEventTitle => 'الحدث';
+
+  @override
+  String get calendarEventName => 'العنوان';
+
+  @override
+  String get calendarStart => 'البداية';
+
+  @override
+  String get calendarEnd => 'النهاية';
+
+  @override
+  String get calendarPlace => 'المكان';
+
+  @override
+  String get calendarNotes => 'ملاحظات';
+
+  @override
+  String get calendarPeople => 'الأشخاص';
 
   @override
   String get notificationsTitle => 'الإشعارات';

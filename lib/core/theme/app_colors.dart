@@ -14,12 +14,15 @@ class AppColors {
   static const Color line = Color(0xFFE4ECE9);
   static const Color muted = Color(0xFF8B9795);
   static const Color blue = Color(0xFF557D8C);
+  // Task category pill (2026-10-08 part B): Support.
+  static const Color purple = Color(0xFF7A6FB0);
 
   // Surface tints used by cards, chips and icon wells.
   static const Color greenTint = Color(0xFFDDF3E9);
   static const Color amberTint = Color(0xFFFFF0DD);
   static const Color blueTint = Color(0xFFE4F0F2);
   static const Color redTint = Color(0xFFFBD8D4);
+  static const Color purpleTint = Color(0xFFE8E4F5);
   static const Color lateRow = Color(0xFFFFF0EE);
   static const Color lateRowBorder = Color(0xFFF8D6D2);
   static const Color geoChipBg = Color(0xFFE9F7F0);

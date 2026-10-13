@@ -12,6 +12,13 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
+    <!-- Firebase (FCM) push notifications — Android 13+ requires this to
+         show any notification at all (2026-10-08 part E). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <!-- Task chat voice messages (2026-10-08 part C). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+
     <uses-feature
         android:name="android.hardware.fingerprint"
         android:required="false"/>
@@ -51,6 +58,13 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Firebase (FCM) push — the channel every push/local notification
+             posts to when the app is backgrounded or killed. Must match
+             `_androidChannelId` in push_service.dart. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="cds_team_default" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

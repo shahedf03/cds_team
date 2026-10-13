@@ -6,6 +6,7 @@
   "commonCancel": "إلغاء",
   "commonBack": "رجوع",
   "commonMore": "المزيد",
+  "commonSend": "إرسال",
 
   "loginWelcomeBack": "أهلاً بعودتك",
   "loginSignInToContinue": "سجّل الدخول للمتابعة",
@@ -53,6 +54,11 @@
   "dashboardTasksThisMonth": "مهام هذا الشهر",
   "dashboardDoneCount": "{count} منجزة",
   "@dashboardDoneCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "dashboardFinishedThisMonth": "منجزة هذا الشهر",
+  "dashboardOpenedThisMonth": "{count} فُتحت هذا الشهر",
+  "@dashboardOpenedThisMonth": {
     "placeholders": { "count": { "type": "int" } }
   },
   "dashboardOverdueCount": "{count} متأخرة",
@@ -143,6 +149,77 @@
   "tasksDelete": "حذف",
   "tasksDeleteConfirmTitle": "حذف هذه المهمة؟",
   "tasksDeleteConfirmMsg": "سيتم حذف المهمة ومرفقاتها نهائياً.",
+  "tasksCreatedBy": "أنشأها: {name}",
+  "@tasksCreatedBy": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "tasksFinishedTitle": "منجزة هذا الشهر",
+  "tasksFinishedEmpty": "لا توجد مهام منجزة هذا الشهر",
+  "tasksFinishedEmptyMsg": "المهام التي تنجزها هذا الشهر ستظهر هنا.",
+  "tasksRemind": "تذكير",
+  "tasksReminderSent": "تم إرسال التذكير إلى {names}",
+  "@tasksReminderSent": {
+    "placeholders": { "names": { "type": "String" } }
+  },
+  "commonAnd": " و ",
+
+  "chatTitle": "المحادثة",
+  "chatWith": "مع {name}",
+  "@chatWith": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "chatEmpty": "لا توجد رسائل بعد",
+  "chatEmptyMsg": "ابدأ المحادثة برسالة.",
+  "chatCouldNotLoad": "تعذّر تحميل المحادثة",
+  "chatLocked": "هذه المحادثة مقفلة.",
+  "chatLocksAt": "تُقفل في {time}",
+  "@chatLocksAt": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "chatTypeMessage": "اكتب رسالة…",
+  "chatAttach": "إرفاق ملفات",
+  "chatRecordVoice": "تسجيل رسالة صوتية",
+  "chatStopRecording": "إيقاف التسجيل",
+  "chatRecording": "جارِ التسجيل… {time}",
+  "@chatRecording": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "chatVoiceMessage": "🎤 رسالة صوتية",
+  "chatPhoto": "📷 صورة",
+  "chatVideo": "🎬 فيديو",
+  "chatCouldNotSend": "تعذّر إرسال الرسالة.",
+  "chatCouldNotRecord": "تعذّر بدء التسجيل.",
+  "chatMicPermissionDenied": "يلزم إذن الميكروفون لتسجيل رسالة صوتية.",
+  "chatRemoveFile": "إزالة",
+
+  "projectsTitle": "المشاريع",
+  "projectsCouldNotLoad": "تعذّر تحميل المشاريع",
+  "projectsEmpty": "لا توجد مشاريع بعد",
+  "projectsDone": "منجزة",
+  "projectsWorking": "قيد العمل",
+  "projectsOpen": "مفتوحة",
+  "projectsOverdue": "متأخرة",
+  "projectsDaysLeft": "{days, plural, =0{اليوم} one{يوم واحد متبقي} two{يومان متبقيان} other{{days} يوم متبقي}}",
+  "@projectsDaysLeft": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "projectsNoSprint": "بدون سبرنت",
+  "projectsSprintEmpty": "لا توجد مهام بهذا السبرنت",
+
+  "calendarTitle": "التقويم",
+  "calendarTeamTasks": "مهام الفريق",
+  "calendarNothingThisDay": "لا يوجد شيء بهذا اليوم",
+  "calendarAllDay": "اليوم كامل",
+  "calendarPending": "قيد الانتظار",
+  "calendarCouldNotSave": "تعذّر حفظ الحدث.",
+  "calendarNewEvent": "حدث جديد",
+  "calendarEventTitle": "الحدث",
+  "calendarEventName": "العنوان",
+  "calendarStart": "البداية",
+  "calendarEnd": "النهاية",
+  "calendarPlace": "المكان",
+  "calendarNotes": "ملاحظات",
+  "calendarPeople": "الأشخاص",
 
   "notificationsTitle": "الإشعارات",
   "notificationsClearAllTitle": "مسح كل الإشعارات؟",

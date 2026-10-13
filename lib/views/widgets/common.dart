@@ -268,7 +268,8 @@ enum ToneColor {
   green(AppColors.green, AppColors.greenTint),
   amber(AppColors.amber, AppColors.amberTint),
   blue(AppColors.blue, AppColors.blueTint),
-  red(AppColors.red, AppColors.redTint);
+  red(AppColors.red, AppColors.redTint),
+  purple(AppColors.purple, AppColors.purpleTint);
 
   const ToneColor(this.foreground, this.background);
 

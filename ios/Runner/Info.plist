@@ -17,6 +17,9 @@
 	<!-- Sick-leave attachment: "Choose from gallery" (§9) -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>CDS Team accesses your photo library so you can attach an existing photo of a medical report to a leave request.</string>
+	<!-- Task chat voice messages (2026-10-08 part C) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>CDS Team uses the microphone so you can send a voice message in a task's chat.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -62,7 +65,7 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<!-- Lets a OneSignal push update silently (badge/content) without
+	<!-- Lets a Firebase (FCM) push update silently (badge/content) without
 	     needing the app in the foreground. -->
 	<key>UIBackgroundModes</key>
 	<array>

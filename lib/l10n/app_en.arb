@@ -6,6 +6,7 @@
   "commonCancel": "Cancel",
   "commonBack": "Back",
   "commonMore": "More",
+  "commonSend": "Send",
 
   "loginWelcomeBack": "WELCOME BACK",
   "loginSignInToContinue": "Sign in to continue",
@@ -53,6 +54,11 @@
   "dashboardTasksThisMonth": "Tasks this month",
   "dashboardDoneCount": "{count} done",
   "@dashboardDoneCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "dashboardFinishedThisMonth": "Finished this month",
+  "dashboardOpenedThisMonth": "{count} opened this month",
+  "@dashboardOpenedThisMonth": {
     "placeholders": { "count": { "type": "int" } }
   },
   "dashboardOverdueCount": "{count} overdue",
@@ -182,6 +188,77 @@
   "tasksDelete": "Delete",
   "tasksDeleteConfirmTitle": "Delete this task?",
   "tasksDeleteConfirmMsg": "The task and its attachments will be permanently deleted.",
+  "tasksCreatedBy": "Opened by: {name}",
+  "@tasksCreatedBy": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "tasksFinishedTitle": "Finished this month",
+  "tasksFinishedEmpty": "Nothing finished yet this month",
+  "tasksFinishedEmptyMsg": "Tasks you finish this month will show up here.",
+  "tasksRemind": "Remind",
+  "tasksReminderSent": "Reminder sent to {names}",
+  "@tasksReminderSent": {
+    "placeholders": { "names": { "type": "String" } }
+  },
+  "commonAnd": " and ",
+
+  "chatTitle": "Chat",
+  "chatWith": "With {name}",
+  "@chatWith": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "chatEmpty": "No messages yet",
+  "chatEmptyMsg": "Say something to get started.",
+  "chatCouldNotLoad": "Could not load the chat",
+  "chatLocked": "This chat is locked.",
+  "chatLocksAt": "Locks at {time}",
+  "@chatLocksAt": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "chatTypeMessage": "Type a message…",
+  "chatAttach": "Attach files",
+  "chatRecordVoice": "Record a voice message",
+  "chatStopRecording": "Stop recording",
+  "chatRecording": "Recording… {time}",
+  "@chatRecording": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "chatVoiceMessage": "🎤 Voice message",
+  "chatPhoto": "📷 Photo",
+  "chatVideo": "🎬 Video",
+  "chatCouldNotSend": "Could not send the message.",
+  "chatCouldNotRecord": "Could not start recording.",
+  "chatMicPermissionDenied": "Microphone permission is needed to record a voice message.",
+  "chatRemoveFile": "Remove",
+
+  "projectsTitle": "Projects",
+  "projectsCouldNotLoad": "Could not load projects",
+  "projectsEmpty": "No projects yet",
+  "projectsDone": "done",
+  "projectsWorking": "working",
+  "projectsOpen": "open",
+  "projectsOverdue": "overdue",
+  "projectsDaysLeft": "{days, plural, =0{today} one{1 day left} other{{days} days left}}",
+  "@projectsDaysLeft": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "projectsNoSprint": "No sprint",
+  "projectsSprintEmpty": "No tasks in this sprint",
+
+  "calendarTitle": "Calendar",
+  "calendarTeamTasks": "Team tasks",
+  "calendarNothingThisDay": "Nothing on this day",
+  "calendarAllDay": "All day",
+  "calendarPending": "Pending",
+  "calendarCouldNotSave": "Could not save the event.",
+  "calendarNewEvent": "New event",
+  "calendarEventTitle": "Event",
+  "calendarEventName": "Title",
+  "calendarStart": "Start",
+  "calendarEnd": "End",
+  "calendarPlace": "Place",
+  "calendarNotes": "Notes",
+  "calendarPeople": "People",
 
   "notificationsTitle": "Notifications",
   "notificationsClearAllTitle": "Clear all notifications?",

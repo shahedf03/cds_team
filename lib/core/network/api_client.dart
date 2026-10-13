@@ -35,10 +35,7 @@ class ApiClient {
             ),
           ) {
     _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: _onRequest,
-        onError: _onError,
-      ),
+      InterceptorsWrapper(onRequest: _onRequest, onError: _onError),
     );
 
     // Added last so it logs the final URL, after the auth header is attached.
@@ -111,6 +108,16 @@ class ApiClient {
       cancelToken: cancelToken,
     ),
   );
+
+  /// A multipart `POST` (file uploads). Dio sets the correct
+  /// `multipart/form-data; boundary=...` header itself whenever `data` is a
+  /// [FormData], overriding the JSON default from [BaseOptions].
+  Future<T> postFormData<T>(
+    String path,
+    FormData data, {
+    CancelToken? cancelToken,
+  }) =>
+      _send<T>(() => _dio.post<T>(path, data: data, cancelToken: cancelToken));
 
   Future<T> put<T>(String path, {Object? data, CancelToken? cancelToken}) =>
       _send<T>(() => _dio.put<T>(path, data: data, cancelToken: cancelToken));

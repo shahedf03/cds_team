@@ -11,6 +11,7 @@ import 'core/theme/app_theme.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'providers/attendance_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/calendar_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/leave_provider.dart';
 import 'providers/locale_provider.dart';
@@ -25,10 +26,14 @@ import 'services/auth_service.dart';
 import 'services/clients_service.dart';
 import 'services/dashboard_service.dart';
 import 'services/device_check_in_service.dart';
+import 'services/device_service.dart';
 import 'services/leave_service.dart';
 import 'services/notifications_service.dart';
 import 'services/push_service.dart';
+import 'services/calendar_service.dart';
+import 'services/projects_service.dart';
 import 'services/system_codes_service.dart';
+import 'services/task_chat_service.dart';
 import 'services/team_service.dart';
 import 'services/tasks_service.dart';
 import 'services/transportation_service.dart';
@@ -71,6 +76,7 @@ class _CdsTeamAppState extends State<CdsTeamApp> {
   late final TeamProvider _team;
   late final NotificationsProvider _notifications;
   late final PushService _push;
+  late final DeviceService _device;
   late final LocaleProvider _locale;
 
   // Also handed to the widget tree: a team member's profile builds its own
@@ -78,6 +84,10 @@ class _CdsTeamAppState extends State<CdsTeamApp> {
   late final AttendanceService _attendanceService;
   late final LeaveService _leaveService;
   late final TasksService _tasksService;
+  late final TaskChatService _taskChatService;
+  late final ProjectsService _projectsService;
+  late final CalendarService _calendarService;
+  late final CalendarProvider _calendar;
   late final TransportationService _transportationService;
   late final ClientsService _clientsService;
 
@@ -90,6 +100,7 @@ class _CdsTeamAppState extends State<CdsTeamApp> {
     _api = ApiClient(tokenStore: _tokenStore);
 
     _push = PushService();
+    _device = DeviceService(_api);
     _locale = LocaleProvider()..load();
 
     _auth = AuthProvider(
@@ -97,10 +108,15 @@ class _CdsTeamAppState extends State<CdsTeamApp> {
       tokenStore: _tokenStore,
       sessionStore: _sessionStore,
       push: _push,
+      device: _device,
     );
     _attendanceService = AttendanceService(_api);
     _leaveService = LeaveService(_api);
     _tasksService = TasksService(_api);
+    _taskChatService = TaskChatService(_api);
+    _projectsService = ProjectsService(_api);
+    _calendarService = CalendarService(_api);
+    _calendar = CalendarProvider(service: _calendarService);
     _transportationService = TransportationService(_api);
     _clientsService = ClientsService(_api);
 
@@ -114,7 +130,7 @@ class _CdsTeamAppState extends State<CdsTeamApp> {
       service: _transportationService,
       clientsService: _clientsService,
     );
-    _tasks = TasksProvider(service: _tasksService);
+    _tasks = TasksProvider(service: _tasksService, chatService: _taskChatService);
     _leave = LeaveProvider(
       service: _leaveService,
       systemCodesService: SystemCodesService(_api),
@@ -126,7 +142,8 @@ class _CdsTeamAppState extends State<CdsTeamApp> {
 
     _push
       ..onOpened = _openFromPush
-      ..onForeground = _refreshFromPush;
+      ..onForeground = _refreshFromPush
+      ..onTokenRefresh = _auth.handleTokenRefresh;
     _push.start();
 
     // A 401 anywhere in the app clears the token, wipes every screen's data
@@ -140,6 +157,7 @@ class _CdsTeamAppState extends State<CdsTeamApp> {
       _teamLeave.reset();
       _team.reset();
       _notifications.reset();
+      _calendar.reset();
       _auth.handleUnauthorized();
       AppRoutes.toLogin();
     };
@@ -174,7 +192,13 @@ class _CdsTeamAppState extends State<CdsTeamApp> {
         _leave.load(userId: userId);
       case PushKind.taskDone:
       case PushKind.taskNew:
+      case PushKind.taskReminder:
         _tasks.load(userId: userId);
+      case PushKind.taskChat:
+        _tasks.refreshChatUnread();
+      case PushKind.calendarEvent:
+      case PushKind.calendarCancelled:
+        _calendar.load();
       case PushKind.unknown:
         break;
     }
@@ -197,6 +221,10 @@ class _CdsTeamAppState extends State<CdsTeamApp> {
         Provider<AttendanceService>.value(value: _attendanceService),
         Provider<LeaveService>.value(value: _leaveService),
         Provider<TasksService>.value(value: _tasksService),
+        Provider<TaskChatService>.value(value: _taskChatService),
+        Provider<ProjectsService>.value(value: _projectsService),
+        Provider<CalendarService>.value(value: _calendarService),
+        ChangeNotifierProvider<CalendarProvider>.value(value: _calendar),
         Provider<TransportationService>.value(value: _transportationService),
         Provider<PushService>.value(value: _push),
         ChangeNotifierProvider<NotificationsProvider>.value(

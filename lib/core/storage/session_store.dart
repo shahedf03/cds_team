@@ -15,7 +15,6 @@ class SessionStore {
   // Legacy: the old §7 "since this id" cursor. `autoId` turned out to be a
   // dismiss flag, so the value is no longer read; only cleared on sign-out.
   static const String _lastNotificationId = 'cds_last_notification_id';
-  static const String _playerId = 'cds_player_id';
   static const String _deviceId = 'cds_device_id';
   static const String _pendingPunches = 'cds_pending_punches';
 
@@ -83,17 +82,5 @@ class SessionStore {
     ).join();
     await prefs.setString(_deviceId, generated);
     return generated;
-  }
-
-  /// Last known OneSignal subscription id, sent as `playerId` on login.
-  /// `"0"` when the device hasn't registered for push yet.
-  Future<String> readPlayerId() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_playerId) ?? '0';
-  }
-
-  Future<void> savePlayerId(String playerId) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_playerId, playerId);
   }
 }

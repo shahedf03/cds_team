@@ -31,15 +31,6 @@ class AppConfig {
     defaultValue: 'http://10.0.10.105:8081/CdsTeam_Api/',
   );
 
-  /// OneSignal App ID for push, injected the same way as the base URL:
-  ///
-  ///   flutter run --dart-define=ONESIGNAL_APP_ID=xxxxxxxx-xxxx-...
-  ///
-  /// Empty disables push; the in-app notifications list still works.
-  static const String oneSignalAppId = String.fromEnvironment(
-    'ONESIGNAL_APP_ID',
-  );
-
   /// Swagger explorer for the configured host.
   static String get swaggerUrl => '$apiBaseUrl/swagger';
 

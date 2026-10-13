@@ -83,7 +83,10 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen> {
     if (userId != null) context.read<LeaveProvider>().load(userId: userId);
   }
 
-  Future<void> _run(Future<void> Function() action, {required String success}) async {
+  Future<void> _run(
+    Future<void> Function() action, {
+    required String success,
+  }) async {
     setState(() => _busy = true);
     try {
       await action();

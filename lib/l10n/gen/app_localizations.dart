@@ -128,6 +128,12 @@ abstract class AppLocalizations {
   /// **'More'**
   String get commonMore;
 
+  /// No description provided for @commonSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get commonSend;
+
   /// No description provided for @loginWelcomeBack.
   ///
   /// In en, this message translates to:
@@ -373,6 +379,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} done'**
   String dashboardDoneCount(int count);
+
+  /// No description provided for @dashboardFinishedThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished this month'**
+  String get dashboardFinishedThisMonth;
+
+  /// No description provided for @dashboardOpenedThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} opened this month'**
+  String dashboardOpenedThisMonth(int count);
 
   /// No description provided for @dashboardOverdueCount.
   ///
@@ -799,6 +817,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The task and its attachments will be permanently deleted.'**
   String get tasksDeleteConfirmMsg;
+
+  /// No description provided for @tasksCreatedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Opened by: {name}'**
+  String tasksCreatedBy(String name);
+
+  /// No description provided for @tasksFinishedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished this month'**
+  String get tasksFinishedTitle;
+
+  /// No description provided for @tasksFinishedEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing finished yet this month'**
+  String get tasksFinishedEmpty;
+
+  /// No description provided for @tasksFinishedEmptyMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks you finish this month will show up here.'**
+  String get tasksFinishedEmptyMsg;
+
+  /// No description provided for @tasksRemind.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind'**
+  String get tasksRemind;
+
+  /// No description provided for @tasksReminderSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder sent to {names}'**
+  String tasksReminderSent(String names);
+
+  /// No description provided for @commonAnd.
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get commonAnd;
+
+  /// No description provided for @chatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get chatTitle;
+
+  /// No description provided for @chatWith.
+  ///
+  /// In en, this message translates to:
+  /// **'With {name}'**
+  String chatWith(String name);
+
+  /// No description provided for @chatEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get chatEmpty;
+
+  /// No description provided for @chatEmptyMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Say something to get started.'**
+  String get chatEmptyMsg;
+
+  /// No description provided for @chatCouldNotLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the chat'**
+  String get chatCouldNotLoad;
+
+  /// No description provided for @chatLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat is locked.'**
+  String get chatLocked;
+
+  /// No description provided for @chatLocksAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Locks at {time}'**
+  String chatLocksAt(String time);
+
+  /// No description provided for @chatTypeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a message…'**
+  String get chatTypeMessage;
+
+  /// No description provided for @chatAttach.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach files'**
+  String get chatAttach;
+
+  /// No description provided for @chatRecordVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Record a voice message'**
+  String get chatRecordVoice;
+
+  /// No description provided for @chatStopRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop recording'**
+  String get chatStopRecording;
+
+  /// No description provided for @chatRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording… {time}'**
+  String chatRecording(String time);
+
+  /// No description provided for @chatVoiceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'🎤 Voice message'**
+  String get chatVoiceMessage;
+
+  /// No description provided for @chatPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'📷 Photo'**
+  String get chatPhoto;
+
+  /// No description provided for @chatVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'🎬 Video'**
+  String get chatVideo;
+
+  /// No description provided for @chatCouldNotSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send the message.'**
+  String get chatCouldNotSend;
+
+  /// No description provided for @chatCouldNotRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start recording.'**
+  String get chatCouldNotRecord;
+
+  /// No description provided for @chatMicPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone permission is needed to record a voice message.'**
+  String get chatMicPermissionDenied;
+
+  /// No description provided for @chatRemoveFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get chatRemoveFile;
+
+  /// No description provided for @projectsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects'**
+  String get projectsTitle;
+
+  /// No description provided for @projectsCouldNotLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load projects'**
+  String get projectsCouldNotLoad;
+
+  /// No description provided for @projectsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No projects yet'**
+  String get projectsEmpty;
+
+  /// No description provided for @projectsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'done'**
+  String get projectsDone;
+
+  /// No description provided for @projectsWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'working'**
+  String get projectsWorking;
+
+  /// No description provided for @projectsOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'open'**
+  String get projectsOpen;
+
+  /// No description provided for @projectsOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'overdue'**
+  String get projectsOverdue;
+
+  /// No description provided for @projectsDaysLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =0{today} one{1 day left} other{{days} days left}}'**
+  String projectsDaysLeft(int days);
+
+  /// No description provided for @projectsNoSprint.
+  ///
+  /// In en, this message translates to:
+  /// **'No sprint'**
+  String get projectsNoSprint;
+
+  /// No description provided for @projectsSprintEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks in this sprint'**
+  String get projectsSprintEmpty;
+
+  /// No description provided for @calendarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get calendarTitle;
+
+  /// No description provided for @calendarTeamTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Team tasks'**
+  String get calendarTeamTasks;
+
+  /// No description provided for @calendarNothingThisDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing on this day'**
+  String get calendarNothingThisDay;
+
+  /// No description provided for @calendarAllDay.
+  ///
+  /// In en, this message translates to:
+  /// **'All day'**
+  String get calendarAllDay;
+
+  /// No description provided for @calendarPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get calendarPending;
+
+  /// No description provided for @calendarCouldNotSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the event.'**
+  String get calendarCouldNotSave;
+
+  /// No description provided for @calendarNewEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'New event'**
+  String get calendarNewEvent;
+
+  /// No description provided for @calendarEventTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Event'**
+  String get calendarEventTitle;
+
+  /// No description provided for @calendarEventName.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get calendarEventName;
+
+  /// No description provided for @calendarStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get calendarStart;
+
+  /// No description provided for @calendarEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get calendarEnd;
+
+  /// No description provided for @calendarPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Place'**
+  String get calendarPlace;
+
+  /// No description provided for @calendarNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get calendarNotes;
+
+  /// No description provided for @calendarPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get calendarPeople;
 
   /// No description provided for @notificationsTitle.
   ///

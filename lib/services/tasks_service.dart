@@ -73,6 +73,30 @@ class TasksService {
     return rows.map(TaskItem.fromJson).toList();
   }
 
+  /// `GET /api/tasks/finished` (2026-10-08 part B) — my tasks finished since
+  /// the 1st of this month, the list behind the dashboard's "منجزة هذا
+  /// الشهر" card. [since] defaults to that card's own count when omitted.
+  Future<List<TaskItem>> finished({DateTime? since}) async {
+    final List<Map<String, dynamic>> rows = await _api.getList(
+      '/api/tasks/finished',
+      query: since == null
+          ? null
+          : <String, dynamic>{'since': ApiFormats.toQueryDate(since)},
+    );
+    return rows.map(TaskItem.fromJson).toList();
+  }
+
+  /// `POST /api/tasks/{taskId}/remind` (2026-10-08 part A, no body) → the
+  /// names it was sent to. `400` with a human message when it's closed,
+  /// nobody else is on it, or it's too soon since the last reminder.
+  Future<List<String>> remind(String taskId) async {
+    final dynamic body = await _api.post<dynamic>('/api/tasks/$taskId/remind');
+    final dynamic sentTo = body is Map ? body['sentTo'] : null;
+    return sentTo is List
+        ? sentTo.map((Object? e) => e.toString()).toList()
+        : const <String>[];
+  }
+
   /// `PUT /api/tasks/{taskId}/status` `{ "status": 3 }` → 204. `403` when
   /// the caller isn't the creator, the assignee or the assignee's manager;
   /// `400` for an invalid status code; `404` if the task doesn't exist.

@@ -1,11 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-import '../core/config/app_config.dart';
-
-/// What a push is about, read from `additionalData.type`.
+/// What a push is about, read from the message's `data.type`.
 enum PushKind {
   /// `leave_request` — a new request from someone on the manager's team.
   leaveRequest,
@@ -28,6 +29,20 @@ enum PushKind {
   /// the request was deleted.
   leaveWithdrawn,
 
+  /// `task_reminder` (2026-10-08 part A) — someone pressed Remind on a
+  /// task you created or are assigned to.
+  taskReminder,
+
+  /// `task_chat` (2026-10-08 part C) — a new message on a task's chat; one
+  /// per run of unread messages, not one per message.
+  taskChat,
+
+  /// `calendar_event` (2026-10-08 part E) — new/changed/starting-soon.
+  calendarEvent,
+
+  /// `calendar_cancelled` — nothing to open, the event/invite is gone.
+  calendarCancelled,
+
   unknown;
 
   static PushKind fromType(Object? value) => switch (value?.toString()) {
@@ -37,15 +52,19 @@ enum PushKind {
     'task_new' => PushKind.taskNew,
     'leave_forwarded' => PushKind.leaveForwarded,
     'leave_withdrawn' => PushKind.leaveWithdrawn,
+    'task_reminder' => PushKind.taskReminder,
+    'task_chat' => PushKind.taskChat,
+    'calendar_event' => PushKind.calendarEvent,
+    'calendar_cancelled' => PushKind.calendarCancelled,
     _ => PushKind.unknown,
   };
 }
 
 /// One push/notification tap: its [kind] plus the id it points at. Pushes
 /// and notification rows carry the same values under different names —
-/// [linkId] (added 2026-10-07) on both, with `transNo`/`taskId` as the
-/// pre-10-07 fallback on a push's `additionalData` — so both places route
-/// through the same [kind]/[linkId] pair.
+/// [linkId] on both, with `transNo`/`taskId` as the pre-2026-10-07 fallback
+/// on a push's data — so both places route through the same [kind]/[linkId]
+/// pair.
 class PushEvent {
   const PushEvent(this.kind, this.linkId);
 
@@ -53,12 +72,27 @@ class PushEvent {
   final String? linkId;
 }
 
-/// OneSignal wrapper. The server pushes to whatever subscription id was sent
-/// as `playerId` on the last login, so the only thing the rest of the app
-/// needs from here is that id, plus two hooks: tap and foreground arrival.
+/// Android notification channel every push/local notification posts to.
+/// Must match `com.google.firebase.messaging.default_notification_channel_id`
+/// in `AndroidManifest.xml`.
+const String _androidChannelId = 'cds_team_default';
+const String _androidChannelName = 'إشعارات CDS Team';
+
+/// Runs in a background isolate for a push that arrives while the app is
+/// backgrounded or killed. The OS already shows the push's own `notification`
+/// payload in that case, so there's nothing to do here — this only exists so
+/// Firebase doesn't log a missing-handler warning, and leaves room for a
+/// future data-only (silent) push.
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {}
+
+/// Firebase Cloud Messaging wrapper (replaces OneSignal — 2026-10-08 part E).
+/// The app only hands its own API the FCM token (see `DeviceService`); it
+/// never talks to the company's Push Gateway directly.
 class PushService {
+  final FlutterLocalNotificationsPlugin _local =
+      FlutterLocalNotificationsPlugin();
   bool _started = false;
-  final Completer<String> _firstId = Completer<String>();
 
   /// Tapped a push (app in background or killed).
   void Function(PushEvent event)? onOpened;
@@ -66,7 +100,8 @@ class PushService {
   /// A push arrived while the app is open.
   void Function(PushEvent event)? onForeground;
 
-  bool get isEnabled => AppConfig.oneSignalAppId.isNotEmpty;
+  /// The FCM token changed (rotation, app reinstall…) — re-register it.
+  void Function(String token)? onTokenRefresh;
 
   /// A tap that arrived before Home was up (cold start, or signed out).
   /// Home consumes it once it's mounted.
@@ -80,58 +115,138 @@ class PushService {
     return event;
   }
 
+  /// `"android"` / `"ios"`, as `POST /api/devices` expects.
+  String get platform => Platform.isIOS ? 'ios' : 'android';
+
   Future<void> start() async {
-    if (_started || !isEnabled) return;
+    if (_started) return;
     _started = true;
 
     try {
-      await OneSignal.initialize(AppConfig.oneSignalAppId);
+      FirebaseMessaging.onBackgroundMessage(
+        firebaseMessagingBackgroundHandler,
+      );
 
-      OneSignal.User.pushSubscription.addObserver((
-        OSPushSubscriptionChangedState state,
-      ) {
-        final String? id = state.current.id;
-        if (id != null && id.isNotEmpty && !_firstId.isCompleted) {
-          _firstId.complete(id);
-        }
-      });
+      await _initLocalNotifications();
 
-      OneSignal.Notifications.addClickListener((OSNotificationClickEvent e) {
-        onOpened?.call(_eventOf(e.notification));
-      });
+      await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      // Android 13+: a no-op on iOS/older Android.
+      await _local
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.requestNotificationsPermission();
 
-      OneSignal.Notifications.addForegroundWillDisplayListener((
-        OSNotificationWillDisplayEvent e,
-      ) {
-        // Still show the banner; just let the open screens refresh too.
-        onForeground?.call(_eventOf(e.notification));
-      });
+      await FirebaseMessaging.instance
+          .setForegroundNotificationPresentationOptions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
 
-      await OneSignal.Notifications.requestPermission(true);
+      FirebaseMessaging.onMessage.listen(_onForegroundMessage);
+      FirebaseMessaging.onMessageOpenedApp.listen(
+        (RemoteMessage m) => onOpened?.call(_eventOf(m.data)),
+      );
+      FirebaseMessaging.instance.onTokenRefresh.listen(
+        (String token) => onTokenRefresh?.call(token),
+      );
+
+      final RemoteMessage? initial = await FirebaseMessaging.instance
+          .getInitialMessage();
+      if (initial != null) onOpened?.call(_eventOf(initial.data));
     } catch (e) {
-      debugPrint('[push] OneSignal init failed: $e');
+      debugPrint('[push] Firebase init failed: $e');
     }
   }
 
-  /// The subscription id to send as `playerId`. Right after a fresh install
-  /// it can still be `null`; wait up to [timeout] for OneSignal to register
-  /// rather than logging in with `"0"` and getting no push until next login.
-  Future<String?> subscriptionId({
-    Duration timeout = const Duration(seconds: 5),
-  }) async {
-    if (!_started) return null;
-    final String? now = OneSignal.User.pushSubscription.id;
-    if (now != null && now.isNotEmpty) return now;
+  Future<void> _initLocalNotifications() async {
+    const AndroidInitializationSettings android =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const DarwinInitializationSettings ios = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
+    await _local.initialize(
+      const InitializationSettings(android: android, iOS: ios),
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        final String? payload = response.payload;
+        if (payload == null || payload.isEmpty) return;
+        try {
+          final Map<String, dynamic> data = Map<String, dynamic>.from(
+            jsonDecode(payload) as Map,
+          );
+          onOpened?.call(_eventOf(data));
+        } catch (_) {
+          // Malformed/old payload — nothing to open.
+        }
+      },
+    );
+
+    await _local
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _androidChannelId,
+            _androidChannelName,
+            importance: Importance.high,
+          ),
+        );
+  }
+
+  /// Android doesn't show a push's `notification` payload while the app is
+  /// in the foreground — show it ourselves, with the original `data` as the
+  /// payload so a tap on it can still route like any other push.
+  Future<void> _onForegroundMessage(RemoteMessage message) async {
+    onForeground?.call(_eventOf(message.data));
+
+    final RemoteNotification? notification = message.notification;
+    if (notification == null) return;
+
+    await _local.show(
+      message.hashCode,
+      notification.title,
+      notification.body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          _androidChannelId,
+          _androidChannelName,
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+      payload: jsonEncode(message.data),
+    );
+  }
+
+  /// The current FCM token, to send as `POST /api/devices`. `null` if it
+  /// couldn't be obtained (e.g. push permission denied).
+  Future<String?> currentToken() async {
     try {
-      return await _firstId.future.timeout(timeout);
-    } on TimeoutException {
+      return await FirebaseMessaging.instance.getToken();
+    } catch (e) {
+      debugPrint('[push] getToken failed: $e');
       return null;
     }
   }
 
-  static PushEvent _eventOf(OSNotification notification) {
-    final Map<String, dynamic> data =
-        notification.additionalData ?? <String, dynamic>{};
+  Future<void> deleteToken() async {
+    try {
+      await FirebaseMessaging.instance.deleteToken();
+    } catch (e) {
+      debugPrint('[push] deleteToken failed: $e');
+    }
+  }
+
+  static PushEvent _eventOf(Map<String, dynamic> data) {
     final String? linkId =
         (data['linkId'] ?? data['transNo'] ?? data['taskId'])?.toString();
     return PushEvent(PushKind.fromType(data['type']), linkId);

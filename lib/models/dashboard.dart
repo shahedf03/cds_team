@@ -9,6 +9,7 @@ class DashboardDto {
   const DashboardDto({
     required this.myToday,
     required this.tasksThisMonth,
+    required this.finishedThisMonth,
     required this.openTasks,
     required this.doneTasksThisMonth,
     required this.overdueTasks,
@@ -27,8 +28,15 @@ class DashboardDto {
 
   final TodaySession myToday;
 
-  /// My own tasks only (assigned to me).
+  /// My own tasks opened this month (2026-10-08: the first card's note,
+  /// "{tasksThisMonth} فُتحت هذا الشهر", not its headline anymore).
   final int tasksThisMonth;
+
+  /// My tasks moved to Done/Delivered this month, even if opened earlier
+  /// (2026-10-08 part A) — now the first card's headline. Tap it to open
+  /// `GET /api/tasks/finished`.
+  final int finishedThisMonth;
+
   final int openTasks;
   final int doneTasksThisMonth;
   final int overdueTasks;
@@ -52,6 +60,7 @@ class DashboardDto {
   factory DashboardDto.fromJson(Map<String, dynamic> json) => DashboardDto(
     myToday: TodaySession.fromJson(_obj(json['myToday'])),
     tasksThisMonth: Json.intVal(json['tasksThisMonth']),
+    finishedThisMonth: Json.intVal(json['finishedThisMonth']),
     openTasks: Json.intVal(json['openTasks']),
     doneTasksThisMonth: Json.intVal(json['doneTasksThisMonth']),
     overdueTasks: Json.intVal(json['overdueTasks']),

@@ -18,8 +18,14 @@ class TaskItem {
     this.responsibleUser = '',
     this.responsibleUserName = '',
     this.createdBy = '',
+    this.createdByName = '',
     this.canEdit = false,
     this.canDelete = false,
+    this.canRemind = false,
+    this.taskCategory = 0,
+    this.taskCategoryName = '',
+    this.taskPageName = '',
+    this.sprintId = 0,
   });
 
   final String taskId;
@@ -46,6 +52,11 @@ class TaskItem {
   final String responsibleUserName;
   final String createdBy;
 
+  /// `GET /api/tasks/search` (2026-10-08 part C) — shown as "أنشأها:
+  /// {createdByName}" on the task card; the field itself existed before,
+  /// only the UI is new.
+  final String createdByName;
+
   /// `GET /api/tasks/search` only: creator, assignee or assignee's manager —
   /// drives the "تم الإنجاز" status button.
   final bool canEdit;
@@ -54,6 +65,21 @@ class TaskItem {
   /// someone with the "DeleteTasks" permission — drives the delete button.
   /// Being the creator or assignee isn't enough on its own.
   final bool canDelete;
+
+  /// 2026-10-08 part A — `false` for a closed task, or when the caller is
+  /// both the creator and the assignee. Drives the bell/Remind button.
+  final bool canRemind;
+
+  /// 2026-10-08 part B — one optional category (`0` = none), set from the
+  /// Portal; the app only shows it. `3` = "Page Task", which also carries
+  /// [taskPageName].
+  final int taskCategory;
+  final String taskCategoryName;
+  final String taskPageName;
+
+  /// 2026-10-08 part D — the sprint it's in within its own project, `0` =
+  /// none.
+  final int sprintId;
 
   factory TaskItem.fromJson(Map<String, dynamic> json) => TaskItem(
     taskId: Json.str(json['taskId']),
@@ -72,9 +98,17 @@ class TaskItem {
     responsibleUser: Json.str(json['responsibleUser']),
     responsibleUserName: Json.str(json['responsibleUserName']),
     createdBy: Json.str(json['createdBy']),
+    createdByName: Json.str(json['createdByName']),
     canEdit: Json.boolOrNull(json['canEdit']) ?? false,
     canDelete: Json.boolOrNull(json['canDelete']) ?? false,
+    canRemind: Json.boolOrNull(json['canRemind']) ?? false,
+    taskCategory: Json.intVal(json['taskCategory']),
+    taskCategoryName: Json.str(json['taskCategoryName']),
+    taskPageName: Json.str(json['taskPageName']),
+    sprintId: Json.intVal(json['sprintId']),
   );
+
+  bool get hasCategory => taskCategory > 0 && taskCategoryName.isNotEmpty;
 
   bool get hasAttachments => attachmentCount > 0;
 
@@ -209,18 +243,22 @@ class Lookup {
 /// `GET /api/tasks/lookups` (2026-10-05) — the status codes drive the
 /// multi-select filter chips on the Tasks screen; `projects`/`priorities`/
 /// `clients` are kept for completeness even though nothing renders them yet.
+/// `categories` (2026-10-08 part B) is set from the Portal — the app only
+/// shows it, there's no task form here yet.
 class TaskLookups {
   const TaskLookups({
     this.statuses = const <Lookup>[],
     this.projects = const <Lookup>[],
     this.priorities = const <Lookup>[],
     this.clients = const <Lookup>[],
+    this.categories = const <Lookup>[],
   });
 
   final List<Lookup> statuses;
   final List<Lookup> projects;
   final List<Lookup> priorities;
   final List<Lookup> clients;
+  final List<Lookup> categories;
 
   factory TaskLookups.fromJson(Map<String, dynamic> json) => TaskLookups(
     statuses: Json.objects(json['statuses']).map(Lookup.fromJson).toList(),
@@ -229,5 +267,8 @@ class TaskLookups {
       json['priorities'],
     ).map(Lookup.fromJson).toList(),
     clients: Json.objects(json['clients']).map(Lookup.fromJson).toList(),
+    categories: Json.objects(
+      json['categories'],
+    ).map(Lookup.fromJson).toList(),
   );
 }

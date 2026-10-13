@@ -4,6 +4,8 @@ import '../models/team.dart';
 import '../models/transportation.dart';
 import '../services/push_service.dart';
 import '../views/screens/attendance_screen.dart';
+import '../views/screens/calendar_screen.dart';
+import '../views/screens/finished_tasks_screen.dart';
 import '../views/screens/home_shell.dart';
 import '../views/screens/leave_detail_screen.dart';
 import '../views/screens/leave_screen.dart';
@@ -11,6 +13,7 @@ import '../views/screens/login_screen.dart';
 import '../views/screens/member_profile_screen.dart';
 import '../views/screens/notifications_screen.dart';
 import '../views/screens/profile_screen.dart';
+import '../views/screens/projects_screen.dart';
 import '../views/screens/tasks_screen.dart';
 import '../views/screens/team_leave_screen.dart';
 import '../views/screens/transportation_editor_screen.dart';
@@ -31,7 +34,12 @@ void openPushTarget(PushEvent event) {
       AppRoutes.open(AppRoutes.leaveTeam);
     case PushKind.taskDone:
     case PushKind.taskNew:
+    case PushKind.taskReminder:
+    case PushKind.taskChat:
       AppRoutes.openTask(event.linkId);
+    case PushKind.calendarEvent:
+      AppRoutes.open(AppRoutes.calendar);
+    case PushKind.calendarCancelled:
     case PushKind.unknown:
       AppRoutes.open(AppRoutes.notifications);
   }
@@ -47,6 +55,10 @@ class AppRoutes {
   static const String home = '/home';
   static const String attendance = '/attendance';
   static const String tasks = '/tasks';
+  /// "منجزة هذا الشهر" — the dashboard's `finishedThisMonth` card.
+  static const String tasksFinished = '/tasks/finished';
+  static const String projects = '/projects';
+  static const String calendar = '/calendar';
   static const String profile = '/profile';
   static const String transportation = '/transportation';
   static const String transportationEditor = '/transportation/edit';
@@ -72,6 +84,12 @@ class AppRoutes {
           TasksScreen(initialTaskId: settings.arguments as String?),
           settings,
         );
+      case tasksFinished:
+        return _slide(const FinishedTasksScreen(), settings);
+      case projects:
+        return _slide(const ProjectsScreen(), settings);
+      case calendar:
+        return _slide(const CalendarScreen(), settings);
       case profile:
         return _slide(const ProfileScreen(), settings);
       case transportation:

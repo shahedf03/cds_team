@@ -33,13 +33,20 @@ dependencies:
   intl: ^0.20.2
   printing: ^5.15.1
   image_picker: ^1.2.3
-  onesignal_flutter: ^5.7.0
 
   # §6 2026-10-04 — opening non-image task attachments (PDF, Office, zip…)
   # with the device's own viewer.
   open_filex: ^4.7.0
   path_provider: ^2.1.5
+
+  # Push: Firebase (FCM) — replaces OneSignal (2026-10-08 part E). The app
+  # only gives our own API its FCM token; the Push Gateway talks to Firebase.
   firebase_core: ^4.15.0
+  firebase_messaging: ^16.0.3
+  flutter_local_notifications: ^18.0.1
+  file_picker: ^11.0.3
+  record: ^7.1.2
+  audioplayers: ^6.8.1
 
 dev_dependencies:
   flutter_test:

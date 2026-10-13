@@ -166,7 +166,10 @@ class _TransportationEditorScreenState
     if (ok) {
       Navigator.of(context).pop(true);
     } else {
-      showApiSnack(context, provider.error ?? AppLocalizations.of(context).editorCouldNotSave);
+      showApiSnack(
+        context,
+        provider.error ?? AppLocalizations.of(context).editorCouldNotSave,
+      );
     }
   }
 
@@ -187,7 +190,9 @@ class _TransportationEditorScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  CdsAppBar(title: _isEditing ? t.editorEditEntry : t.editorNewEntry),
+                  CdsAppBar(
+                    title: _isEditing ? t.editorEditEntry : t.editorNewEntry,
+                  ),
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.only(bottom: 30),
@@ -242,11 +247,17 @@ class _TransportationEditorScreenState
                               Row(
                                 children: <Widget>[
                                   Expanded(
-                                    child: Text(t.editorClientsLabel, style: _eyebrow),
+                                    child: Text(
+                                      t.editorClientsLabel,
+                                      style: _eyebrow,
+                                    ),
                                   ),
                                   TextButton.icon(
                                     onPressed: _addClient,
-                                    icon: const Icon(Icons.add_rounded, size: 16),
+                                    icon: const Icon(
+                                      Icons.add_rounded,
+                                      size: 16,
+                                    ),
                                     label: Text(
                                       t.editorAddClient,
                                       style: const TextStyle(
@@ -269,7 +280,9 @@ class _TransportationEditorScreenState
                               const SizedBox(height: 12),
                               if (_clients.isEmpty)
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
                                   child: Text(
                                     t.editorNoClients,
                                     style: const TextStyle(

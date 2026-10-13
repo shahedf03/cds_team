@@ -6,14 +6,17 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/network/api_exception.dart';
 import '../../core/theme/app_colors.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../models/task_item.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/tasks_provider.dart';
+import '../../routes/app_routes.dart';
 import '../../services/tasks_service.dart';
 import '../widgets/cds_app_bar.dart';
 import '../widgets/common.dart';
+import 'task_chat_screen.dart';
 
 /// §6 — "CDS Teams Tasks", grouped by project (OSFA, CMMS, ...).
 class TasksScreen extends StatefulWidget {
@@ -73,11 +76,44 @@ class _TasksScreenState extends State<TasksScreen> {
     final Widget body = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        if (!widget.embedded) CdsAppBar(title: t.tasksTitle),
+        if (!widget.embedded)
+          CdsAppBar(
+            title: t.tasksTitle,
+            action: PopupMenuButton<String>(
+              icon: const Icon(Icons.more_horiz_rounded, color: AppColors.ink),
+              onSelected: (String route) => Navigator.of(context).pushNamed(route),
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                PopupMenuItem<String>(
+                  value: AppRoutes.calendar,
+                  child: Row(children: <Widget>[
+                    const Icon(Icons.calendar_month_outlined, size: 18),
+                    const SizedBox(width: 8),
+                    Text(t.calendarTitle),
+                  ]),
+                ),
+                PopupMenuItem<String>(
+                  value: AppRoutes.projects,
+                  child: Row(children: <Widget>[
+                    const Icon(Icons.folder_open_outlined, size: 18),
+                    const SizedBox(width: 8),
+                    Text(t.projectsTitle),
+                  ]),
+                ),
+              ],
+            ),
+          ),
         TaskSummary(done: provider.doneCount, total: provider.tasks.length),
         if (provider.statuses.isNotEmpty) ...<Widget>[
           const SizedBox(height: 16),
           _StatusFilterChips(provider: provider),
+        ],
+        if (provider.categories.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 10),
+          _CategoryFilterChips(provider: provider),
+        ],
+        if (provider.creators.length > 1) ...<Widget>[
+          const SizedBox(height: 10),
+          _CreatedByFilterChips(provider: provider),
         ],
         const SizedBox(height: 22),
         ListLabel(label: t.tasksProjects),
@@ -211,6 +247,86 @@ class _StatusFilterChips extends StatelessWidget {
                   onTap: () => provider.toggleStatus(status.intCode!),
                 ),
               ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 2026-10-08 part B — one category at a time, filtered locally over
+/// whatever's already loaded (the Portal does it the same way).
+class _CategoryFilterChips extends StatelessWidget {
+  const _CategoryFilterChips({required this.provider});
+
+  final TasksProvider provider;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    return SizedBox(
+      height: 32,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: <Widget>[
+          _FilterChipPill(
+            label: '${t.filterAll} (${provider.countForCategory(null)})',
+            selected: provider.selectedCategory == null,
+            onTap: () {
+              if (provider.selectedCategory != null) {
+                provider.toggleCategory(provider.selectedCategory!);
+              }
+            },
+          ),
+          for (final Lookup category in provider.categories)
+            if (category.intCode != null)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 8),
+                child: _FilterChipPill(
+                  label:
+                      '${category.name} (${provider.countForCategory(category.intCode)})',
+                  selected: provider.selectedCategory == category.intCode,
+                  onTap: () => provider.toggleCategory(category.intCode!),
+                ),
+              ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Optional "Created by" filter (2026-10-08 part C), filtered locally over
+/// whatever's already loaded, same as status/category.
+class _CreatedByFilterChips extends StatelessWidget {
+  const _CreatedByFilterChips({required this.provider});
+
+  final TasksProvider provider;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    return SizedBox(
+      height: 32,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: <Widget>[
+          _FilterChipPill(
+            label: '${t.filterAll} (${provider.countForCreatedBy(null)})',
+            selected: provider.selectedCreatedBy == null,
+            onTap: () {
+              if (provider.selectedCreatedBy != null) {
+                provider.toggleCreatedBy(provider.selectedCreatedBy!);
+              }
+            },
+          ),
+          for (final (String id, String name) in provider.creators)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 8),
+              child: _FilterChipPill(
+                label: '$name (${provider.countForCreatedBy(id)})',
+                selected: provider.selectedCreatedBy == id,
+                onTap: () => provider.toggleCreatedBy(id),
+              ),
+            ),
         ],
       ),
     );
@@ -412,6 +528,8 @@ class _TaskRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final int unread = context.watch<TasksProvider>().unreadChatFor(task.taskId);
     return InkWell(
       onTap: () => showTaskDetails(context, task),
       child: Container(
@@ -437,6 +555,10 @@ class _TaskRow extends StatelessWidget {
                       color: AppColors.ink,
                     ),
                   ),
+                  if (task.hasCategory) ...<Widget>[
+                    const SizedBox(height: 4),
+                    _CategoryPill(task: task),
+                  ],
                   const SizedBox(height: 4),
                   Text(
                     '${task.deadlineLabel} · ${task.taskStatusName}',
@@ -452,6 +574,18 @@ class _TaskRow extends StatelessWidget {
                           : FontWeight.w400,
                     ),
                   ),
+                  if (task.createdByName.isNotEmpty) ...<Widget>[
+                    const SizedBox(height: 2),
+                    Text(
+                      t.tasksCreatedBy(task.createdByName),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: Color(0xFF929D9A),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -467,6 +601,28 @@ class _TaskRow extends StatelessWidget {
               ),
               const SizedBox(width: 6),
             ],
+            if (unread > 0) ...<Widget>[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.green,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(
+                  '$unread',
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
+            if (task.canRemind) ...<Widget>[
+              _RemindButton(task: task, compact: true),
+              const SizedBox(width: 2),
+            ],
             Icon(
               task.isDone ? Icons.check_rounded : Icons.chevron_right_rounded,
               size: 16,
@@ -474,6 +630,77 @@ class _TaskRow extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Bell icon (task card) that sends `POST /api/tasks/{taskId}/remind` — only
+/// shown when [TaskItem.canRemind]. Shared by the row and the compact form
+/// used there; the details sheet instead drives [_RemindButtonState.send]
+/// from its own full-width button.
+class _RemindButton extends StatefulWidget {
+  const _RemindButton({required this.task, this.compact = false});
+
+  final TaskItem task;
+  final bool compact;
+
+  @override
+  State<_RemindButton> createState() => _RemindButtonState();
+}
+
+class _RemindButtonState extends State<_RemindButton> {
+  bool _busy = false;
+
+  /// Sends the reminder and shows the result as a snack — used both by this
+  /// button and by the task-details sheet's full-width one.
+  static Future<void> send(BuildContext context, TaskItem task) async {
+    final AppLocalizations t = AppLocalizations.of(context);
+    try {
+      final List<String> sentTo = await context
+          .read<TasksService>()
+          .remind(task.taskId);
+      if (!context.mounted) return;
+      showApiSnack(
+        context,
+        t.tasksReminderSent(sentTo.join(t.commonAnd)),
+        isError: false,
+      );
+    } on ApiException catch (e) {
+      if (context.mounted) showApiSnack(context, e.message);
+    } catch (e) {
+      if (context.mounted) showApiSnack(context, e.toString());
+    }
+  }
+
+  Future<void> _press() async {
+    setState(() => _busy = true);
+    await _RemindButtonState.send(context, widget.task);
+    if (mounted) setState(() => _busy = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.compact) return const SizedBox.shrink();
+    return InkWell(
+      onTap: _busy ? null : _press,
+      borderRadius: BorderRadius.circular(99),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: _busy
+            ? const SizedBox(
+                width: 13,
+                height: 13,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.6,
+                  color: AppColors.blue,
+                ),
+              )
+            : const Icon(
+                Icons.notifications_active_outlined,
+                size: 15,
+                color: AppColors.blue,
+              ),
       ),
     );
   }
@@ -558,8 +785,17 @@ class _TaskDetailsSheetState extends State<_TaskDetailsSheet> {
               ),
             ),
             const SizedBox(height: 14),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: <Widget>[
+                if (task.hasCategory)
+                  StatusChip(
+                    label: task.taskPageName.isEmpty
+                        ? task.taskCategoryName
+                        : '${task.taskCategoryName} · ${task.taskPageName}',
+                    tone: _CategoryPill._toneFor(task.taskCategory),
+                  ),
                 StatusChip(
                   label: task.taskStatusName,
                   tone: task.isDone
@@ -568,7 +804,6 @@ class _TaskDetailsSheetState extends State<_TaskDetailsSheet> {
                       ? ToneColor.amber
                       : ToneColor.blue,
                 ),
-                const SizedBox(width: 8),
                 StatusChip(
                   label: task.deadlineLabel,
                   tone: task.isOverdue ? ToneColor.red : ToneColor.blue,
@@ -576,6 +811,13 @@ class _TaskDetailsSheetState extends State<_TaskDetailsSheet> {
                 ),
               ],
             ),
+            if (task.createdByName.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 14),
+              Text(
+                t.tasksCreatedBy(task.createdByName),
+                style: const TextStyle(fontSize: 11, color: AppColors.subtleText),
+              ),
+            ],
             if (task.clientName.isNotEmpty) ...<Widget>[
               const SizedBox(height: 16),
               _DetailLine(label: t.tasksClient, value: task.clientName),
@@ -697,6 +939,45 @@ class _TaskDetailsSheetState extends State<_TaskDetailsSheet> {
                 ),
               ),
             ],
+            if (_canChat(context)) ...<Widget>[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => TaskChatScreen(task: task),
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.green,
+                    side: const BorderSide(color: AppColors.green),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                  label: Text(t.chatTitle),
+                ),
+              ),
+            ],
+            if (task.canRemind) ...<Widget>[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _busy ? null : _remind,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.blue,
+                    side: const BorderSide(color: AppColors.blue),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  icon: const Icon(
+                    Icons.notifications_active_outlined,
+                    size: 18,
+                  ),
+                  label: Text(t.tasksRemind),
+                ),
+              ),
+            ],
             if (task.canDelete) ...<Widget>[
               const SizedBox(height: 10),
               SizedBox(
@@ -718,6 +999,21 @@ class _TaskDetailsSheetState extends State<_TaskDetailsSheet> {
         ),
       ),
     );
+  }
+
+  /// The chat is only between the task's creator and its assignee
+  /// (2026-10-08 part C) — both fields were already on the row.
+  bool _canChat(BuildContext context) {
+    final String? userId = context.read<AuthProvider>().user?.userId;
+    if (userId == null) return false;
+    final TaskItem task = widget.task;
+    return userId == task.createdBy || userId == task.responsibleUser;
+  }
+
+  Future<void> _remind() async {
+    setState(() => _busy = true);
+    await _RemindButtonState.send(context, widget.task);
+    if (mounted) setState(() => _busy = false);
   }
 
   Future<void> _markDone() async {
@@ -1093,6 +1389,49 @@ class _DetailLine extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Small coloured pill for [TaskItem.taskCategoryName], with the page name
+/// appended for a Page Task (category `3`). Set from the Portal — the app
+/// only shows it (2026-10-08 part B).
+class _CategoryPill extends StatelessWidget {
+  const _CategoryPill({required this.task});
+
+  final TaskItem task;
+
+  static ToneColor _toneFor(int code) => switch (code) {
+    1 => ToneColor.red, // Bug
+    2 => ToneColor.green, // New Feature
+    3 => ToneColor.blue, // Page Task
+    4 => ToneColor.amber, // Improvement
+    5 => ToneColor.purple, // Support
+    _ => ToneColor.blue,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final ToneColor tone = _toneFor(task.taskCategory);
+    final String label = task.taskPageName.isEmpty
+        ? task.taskCategoryName
+        : '${task.taskCategoryName} · ${task.taskPageName}';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: tone.background,
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 8,
+          fontWeight: FontWeight.w700,
+          color: tone.foreground,
+        ),
+      ),
     );
   }
 }

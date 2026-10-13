@@ -24,6 +24,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonMore => 'More';
 
   @override
+  String get commonSend => 'Send';
+
+  @override
   String get loginWelcomeBack => 'WELCOME BACK';
 
   @override
@@ -149,6 +152,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String dashboardDoneCount(int count) {
     return '$count done';
+  }
+
+  @override
+  String get dashboardFinishedThisMonth => 'Finished this month';
+
+  @override
+  String dashboardOpenedThisMonth(int count) {
+    return '$count opened this month';
   }
 
   @override
@@ -422,6 +433,177 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tasksDeleteConfirmMsg =>
       'The task and its attachments will be permanently deleted.';
+
+  @override
+  String tasksCreatedBy(String name) {
+    return 'Opened by: $name';
+  }
+
+  @override
+  String get tasksFinishedTitle => 'Finished this month';
+
+  @override
+  String get tasksFinishedEmpty => 'Nothing finished yet this month';
+
+  @override
+  String get tasksFinishedEmptyMsg =>
+      'Tasks you finish this month will show up here.';
+
+  @override
+  String get tasksRemind => 'Remind';
+
+  @override
+  String tasksReminderSent(String names) {
+    return 'Reminder sent to $names';
+  }
+
+  @override
+  String get commonAnd => ' and ';
+
+  @override
+  String get chatTitle => 'Chat';
+
+  @override
+  String chatWith(String name) {
+    return 'With $name';
+  }
+
+  @override
+  String get chatEmpty => 'No messages yet';
+
+  @override
+  String get chatEmptyMsg => 'Say something to get started.';
+
+  @override
+  String get chatCouldNotLoad => 'Could not load the chat';
+
+  @override
+  String get chatLocked => 'This chat is locked.';
+
+  @override
+  String chatLocksAt(String time) {
+    return 'Locks at $time';
+  }
+
+  @override
+  String get chatTypeMessage => 'Type a message…';
+
+  @override
+  String get chatAttach => 'Attach files';
+
+  @override
+  String get chatRecordVoice => 'Record a voice message';
+
+  @override
+  String get chatStopRecording => 'Stop recording';
+
+  @override
+  String chatRecording(String time) {
+    return 'Recording… $time';
+  }
+
+  @override
+  String get chatVoiceMessage => '🎤 Voice message';
+
+  @override
+  String get chatPhoto => '📷 Photo';
+
+  @override
+  String get chatVideo => '🎬 Video';
+
+  @override
+  String get chatCouldNotSend => 'Could not send the message.';
+
+  @override
+  String get chatCouldNotRecord => 'Could not start recording.';
+
+  @override
+  String get chatMicPermissionDenied =>
+      'Microphone permission is needed to record a voice message.';
+
+  @override
+  String get chatRemoveFile => 'Remove';
+
+  @override
+  String get projectsTitle => 'Projects';
+
+  @override
+  String get projectsCouldNotLoad => 'Could not load projects';
+
+  @override
+  String get projectsEmpty => 'No projects yet';
+
+  @override
+  String get projectsDone => 'done';
+
+  @override
+  String get projectsWorking => 'working';
+
+  @override
+  String get projectsOpen => 'open';
+
+  @override
+  String get projectsOverdue => 'overdue';
+
+  @override
+  String projectsDaysLeft(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days left',
+      one: '1 day left',
+      zero: 'today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get projectsNoSprint => 'No sprint';
+
+  @override
+  String get projectsSprintEmpty => 'No tasks in this sprint';
+
+  @override
+  String get calendarTitle => 'Calendar';
+
+  @override
+  String get calendarTeamTasks => 'Team tasks';
+
+  @override
+  String get calendarNothingThisDay => 'Nothing on this day';
+
+  @override
+  String get calendarAllDay => 'All day';
+
+  @override
+  String get calendarPending => 'Pending';
+
+  @override
+  String get calendarCouldNotSave => 'Could not save the event.';
+
+  @override
+  String get calendarNewEvent => 'New event';
+
+  @override
+  String get calendarEventTitle => 'Event';
+
+  @override
+  String get calendarEventName => 'Title';
+
+  @override
+  String get calendarStart => 'Start';
+
+  @override
+  String get calendarEnd => 'End';
+
+  @override
+  String get calendarPlace => 'Place';
+
+  @override
+  String get calendarNotes => 'Notes';
+
+  @override
+  String get calendarPeople => 'People';
 
   @override
   String get notificationsTitle => 'Notifications';

@@ -61,11 +61,69 @@ class AppTheme {
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: AppColors.green,
       ),
-      datePickerTheme: const DatePickerThemeData(
-        backgroundColor: AppColors.cream,
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        dividerColor: Colors.transparent,
+        headerBackgroundColor: AppColors.green,
+        headerForegroundColor: Colors.white,
+        headerHeadlineStyle: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+        headerHelpStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70),
+        weekdayStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.faintText),
+        dayStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        dayShape: const WidgetStatePropertyAll<OutlinedBorder>(StadiumBorder()),
+        dayForegroundColor: WidgetStateProperty.resolveWith((Set<WidgetState> s) {
+          if (s.contains(WidgetState.selected)) return Colors.white;
+          if (s.contains(WidgetState.disabled)) return AppColors.faintText;
+          return AppColors.ink;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((Set<WidgetState> s) {
+          if (s.contains(WidgetState.selected)) return AppColors.green;
+          return Colors.transparent;
+        }),
+        dayOverlayColor: const WidgetStatePropertyAll<Color>(AppColors.greenTint),
+        todayForegroundColor: const WidgetStatePropertyAll<Color>(AppColors.green),
+        todayBorder: const BorderSide(color: AppColors.green, width: 1.4),
+        rangePickerBackgroundColor: Colors.white,
+        rangePickerElevation: 0,
+        rangePickerHeaderBackgroundColor: AppColors.green,
+        rangePickerHeaderForegroundColor: Colors.white,
+        rangePickerHeaderHeadlineStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+        rangePickerHeaderHelpStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70),
+        rangeSelectionBackgroundColor: AppColors.greenTint,
+        rangePickerShape: const RoundedRectangleBorder(),
+        yearStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        cancelButtonStyle: ButtonStyle(
+          foregroundColor: const WidgetStatePropertyAll<Color>(AppColors.subtleText),
+          textStyle: const WidgetStatePropertyAll<TextStyle>(TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+        ),
+        confirmButtonStyle: ButtonStyle(
+          foregroundColor: const WidgetStatePropertyAll<Color>(AppColors.green),
+          textStyle: const WidgetStatePropertyAll<TextStyle>(TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+        ),
       ),
-      timePickerTheme: const TimePickerThemeData(
-        backgroundColor: AppColors.cream,
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        dialBackgroundColor: AppColors.greenTint,
+        dialHandColor: AppColors.green,
+        hourMinuteColor: WidgetStateColor.resolveWith(
+          (Set<WidgetState> s) => s.contains(WidgetState.selected) ? AppColors.greenTint : AppColors.line.withValues(alpha: 0.5),
+        ),
+        hourMinuteTextColor: WidgetStateColor.resolveWith(
+          (Set<WidgetState> s) => s.contains(WidgetState.selected) ? AppColors.green : AppColors.ink,
+        ),
+        dayPeriodColor: WidgetStateColor.resolveWith(
+          (Set<WidgetState> s) => s.contains(WidgetState.selected) ? AppColors.green : Colors.transparent,
+        ),
+        dayPeriodTextColor: WidgetStateColor.resolveWith(
+          (Set<WidgetState> s) => s.contains(WidgetState.selected) ? Colors.white : AppColors.subtleText,
+        ),
+        entryModeIconColor: AppColors.green,
+        helpTextStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.subtleText),
       ),
     );
   }

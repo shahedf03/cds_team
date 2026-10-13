@@ -33,9 +33,12 @@ import 'services/team_service.dart';
 import 'services/tasks_service.dart';
 import 'services/transportation_service.dart';
 import 'views/screens/splash_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -119,9 +122,7 @@ class _CdsTeamAppState extends State<CdsTeamApp> {
     );
     _teamLeave = TeamLeaveProvider(service: _leaveService);
     _team = TeamProvider(service: TeamService(_api));
-    _notifications = NotificationsProvider(
-      service: NotificationsService(_api),
-    );
+    _notifications = NotificationsProvider(service: NotificationsService(_api));
 
     _push
       ..onOpened = _openFromPush

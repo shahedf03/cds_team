@@ -10,6 +10,7 @@ import '../../providers/attendance_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/loadable.dart';
 import '../widgets/cds_app_bar.dart';
+import '../widgets/cds_refresh_indicator.dart';
 import '../widgets/common.dart';
 import '../widgets/skeleton.dart';
 import '../widgets/date_range_sheet.dart';
@@ -77,9 +78,7 @@ class AttendanceScreen extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         Expanded(
-          child: RefreshIndicator(
-            color: AppColors.green,
-            backgroundColor: Colors.white,
+          child: CdsRefreshIndicator(
             onRefresh: () => _refresh(context),
             child: _Body(provider: provider, onRetry: () => _refresh(context)),
           ),

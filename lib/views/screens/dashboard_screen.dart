@@ -11,6 +11,7 @@ import '../../providers/dashboard_provider.dart';
 import '../../routes/app_routes.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/check_in_card.dart';
+import '../widgets/cds_refresh_indicator.dart';
 import '../widgets/common.dart';
 import '../widgets/skeleton.dart';
 
@@ -33,9 +34,7 @@ class DashboardScreen extends StatelessWidget {
     final DashboardProvider dashboard = context.watch<DashboardProvider>();
     final DashboardDto? data = dashboard.data;
 
-    return RefreshIndicator(
-      color: AppColors.green,
-      backgroundColor: Colors.white,
+    return CdsRefreshIndicator(
       onRefresh: () => _refresh(context),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(18, 0, 18, 100),

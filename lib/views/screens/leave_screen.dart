@@ -17,6 +17,7 @@ import '../../routes/app_routes.dart';
 import '../../services/leave_service.dart';
 import '../widgets/cds_app_bar.dart';
 import '../widgets/cds_dialogs.dart';
+import '../widgets/cds_refresh_indicator.dart';
 import '../widgets/common.dart';
 import '../widgets/skeleton.dart';
 import '../widgets/date_range_sheet.dart';
@@ -224,9 +225,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
                   trailing: visible.isEmpty ? null : '${visible.length}',
                 ),
                 Expanded(
-                  child: RefreshIndicator(
-                    color: AppColors.green,
-                    backgroundColor: Colors.white,
+                  child: CdsRefreshIndicator(
                     onRefresh: _refresh,
                     child: _Body(
                       provider: provider,

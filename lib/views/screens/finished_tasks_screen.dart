@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../models/task_item.dart';
 import '../../services/tasks_service.dart';
 import '../widgets/cds_app_bar.dart';
+import '../widgets/cds_refresh_indicator.dart';
 import '../widgets/common.dart';
 import '../widgets/skeleton.dart';
 import 'tasks_screen.dart' show TaskProjectCard;
@@ -50,9 +50,7 @@ class _FinishedTasksScreenState extends State<FinishedTasksScreen> {
                 CdsAppBar(title: t.tasksFinishedTitle),
                 const SizedBox(height: 14),
                 Expanded(
-                  child: RefreshIndicator(
-                    color: AppColors.green,
-                    backgroundColor: Colors.white,
+                  child: CdsRefreshIndicator(
                     onRefresh: _refresh,
                     child: FutureBuilder<List<TaskItem>>(
                       future: _future,

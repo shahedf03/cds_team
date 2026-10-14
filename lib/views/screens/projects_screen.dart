@@ -9,6 +9,7 @@ import '../../models/task_item.dart';
 import '../../services/projects_service.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/cds_app_bar.dart';
+import '../widgets/cds_refresh_indicator.dart';
 import '../widgets/common.dart';
 import '../widgets/skeleton.dart';
 import 'tasks_screen.dart' show showTaskDetails;
@@ -51,9 +52,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 CdsAppBar(title: t.projectsTitle),
                 const SizedBox(height: 10),
                 Expanded(
-                  child: RefreshIndicator(
-                    color: AppColors.green,
-                    backgroundColor: Colors.white,
+                  child: CdsRefreshIndicator(
                     onRefresh: _refresh,
                     child: FutureBuilder<List<ProjectSummary>>(
                       future: _future,
@@ -274,9 +273,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 CdsAppBar(title: widget.name),
                 const SizedBox(height: 6),
                 Expanded(
-                  child: RefreshIndicator(
-                    color: AppColors.green,
-                    backgroundColor: Colors.white,
+                  child: CdsRefreshIndicator(
                     onRefresh: _refresh,
                     child: FutureBuilder<ProjectDetail>(
                       future: _future,

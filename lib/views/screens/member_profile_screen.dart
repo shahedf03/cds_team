@@ -18,6 +18,7 @@ import '../../services/tasks_service.dart';
 import '../../services/transportation_service.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/cds_app_bar.dart';
+import '../widgets/cds_refresh_indicator.dart';
 import '../widgets/common.dart';
 import '../widgets/skeleton.dart';
 import '../widgets/date_range_sheet.dart';
@@ -248,9 +249,7 @@ class _SectionList<T> extends StatelessWidget {
       const SizedBox(height: 40),
     ];
 
-    return RefreshIndicator(
-      color: AppColors.green,
-      backgroundColor: Colors.white,
+    return CdsRefreshIndicator(
       onRefresh: onRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),

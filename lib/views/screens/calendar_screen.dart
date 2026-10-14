@@ -11,6 +11,7 @@ import '../../routes/app_routes.dart';
 import '../../services/calendar_service.dart';
 import '../widgets/cds_app_bar.dart';
 import '../widgets/cds_dialogs.dart';
+import '../widgets/cds_refresh_indicator.dart';
 import '../widgets/common.dart';
 
 /// Month calendar: events, task deadlines and leave. [embedded] = bottom-nav
@@ -67,9 +68,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ),
         const SizedBox(height: 14),
         Expanded(
-          child: RefreshIndicator(
-            color: AppColors.green,
-            backgroundColor: Colors.white,
+          child: CdsRefreshIndicator(
             onRefresh: cal.load,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),

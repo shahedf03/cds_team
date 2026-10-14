@@ -27,6 +27,7 @@ class TaskChatProvider extends ChangeNotifier {
   bool _loading = false;
   bool _sending = false;
   String? _error;
+  bool _disposed = false;
 
   List<ChatMessage> get messages => List<ChatMessage>.unmodifiable(_messages);
   bool get isOpen => _isOpen;
@@ -47,6 +48,7 @@ class TaskChatProvider extends ChangeNotifier {
   }
 
   Future<void> _refresh({required int afterId}) async {
+    if (_disposed) return;
     if (afterId == 0) {
       _loading = true;
       notifyListeners();
@@ -72,7 +74,7 @@ class TaskChatProvider extends ChangeNotifier {
       if (afterId == 0) _error = e.toString();
     } finally {
       _loading = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 
@@ -94,6 +96,7 @@ class TaskChatProvider extends ChangeNotifier {
   );
 
   Future<String?> _runSend(Future<ChatMessage> Function() call) async {
+    if (_disposed) return null;
     _sending = true;
     notifyListeners();
     String? error;
@@ -106,13 +109,14 @@ class TaskChatProvider extends ChangeNotifier {
       error = e.toString();
     } finally {
       _sending = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
     return error;
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _timer?.cancel();
     super.dispose();
   }

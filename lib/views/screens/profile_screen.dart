@@ -16,6 +16,7 @@ import '../../providers/transportation_provider.dart';
 import '../../routes/app_routes.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/cds_app_bar.dart';
+import '../widgets/cds_dialogs.dart';
 import '../widgets/common.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -25,33 +26,16 @@ class ProfileScreen extends StatelessWidget {
 
   Future<void> _logout(BuildContext context) async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        backgroundColor: AppColors.cream,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Text(t.profileSignOutTitle, style: const TextStyle(fontSize: 17)),
-        content: Text(
-          t.profileSignOutMsg,
-          style: const TextStyle(fontSize: 12, color: AppColors.muted),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(t.commonCancel, style: const TextStyle(color: AppColors.muted)),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.red),
-            child: Text(t.profileSignOut),
-          ),
-        ],
-      ),
+    final bool confirmed = await showCdsConfirm(
+      context,
+      icon: Icons.logout_rounded,
+      tone: ToneColor.red,
+      title: t.profileSignOutTitle,
+      message: t.profileSignOutMsg,
+      confirmLabel: t.profileSignOut,
     );
 
-    if (confirmed != true || !context.mounted) return;
+    if (!confirmed || !context.mounted) return;
 
     context.read<AttendanceProvider>().reset();
     context.read<TransportationProvider>().reset();

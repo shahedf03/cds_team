@@ -9,7 +9,9 @@ import '../../providers/notifications_provider.dart';
 import '../../routes/app_routes.dart';
 import '../../services/push_service.dart';
 import '../widgets/cds_app_bar.dart';
+import '../widgets/cds_dialogs.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 
 /// §7 — notifications list: pull to refresh, swipe to dismiss, clear all.
 /// Dismissing is server-side (`autoId`), so a dismissed item stays gone.
@@ -71,32 +73,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Future<void> _clearAll() async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        backgroundColor: AppColors.cream,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          t.notificationsClearAllTitle,
-          style: const TextStyle(fontSize: 16),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              t.commonCancel,
-              style: const TextStyle(color: AppColors.muted),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.red),
-            child: Text(t.notificationsClearAll),
-          ),
-        ],
-      ),
+    final bool confirmed = await showCdsConfirm(
+      context,
+      icon: Icons.notifications_off_outlined,
+      tone: ToneColor.red,
+      title: t.notificationsClearAllTitle,
+      confirmLabel: t.notificationsClearAll,
     );
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     final String? userId = context.read<AuthProvider>().user?.userId;
     if (userId == null) return;
@@ -293,8 +277,9 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     if (provider.isLoading && provider.items.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.green),
+      return SkeletonList(
+        itemCount: 8,
+        itemBuilder: (_, int i) => SkeletonRow(seed: i, trailingPill: false),
       );
     }
 

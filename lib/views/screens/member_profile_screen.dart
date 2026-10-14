@@ -19,7 +19,9 @@ import '../../services/transportation_service.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/cds_app_bar.dart';
 import '../widgets/common.dart';
-import 'attendance_screen.dart' show AttendanceRow;
+import '../widgets/skeleton.dart';
+import '../widgets/date_range_sheet.dart';
+import 'attendance_screen.dart' show AttendanceRow, AttendanceSummaryCard;
 import 'leave_screen.dart' show LeaveBalanceCard, LeaveRequestCard;
 import 'tasks_screen.dart' show TaskProjectCard, TaskSummary;
 import 'transportation_screen.dart'
@@ -193,8 +195,10 @@ class _SectionList<T> extends StatelessWidget {
     required this.errorTitle,
     required this.empty,
     this.header = const <Widget>[],
+    this.skeletonLeading = SkeletonLeading.icon,
   });
 
+  final SkeletonLeading skeletonLeading;
   final List<T> items;
   final bool loading;
   final bool loaded;
@@ -212,10 +216,17 @@ class _SectionList<T> extends StatelessWidget {
     final List<Widget> children = <Widget>[
       ...header,
       if (firstLoad)
-        const Padding(
-          padding: EdgeInsets.only(top: 60),
-          child: Center(
-            child: CircularProgressIndicator(color: AppColors.green),
+        SkeletonFadeIn(
+          child: Shimmer(
+            child: Column(
+              children: <Widget>[
+                for (int i = 0; i < 5; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: SkeletonRow(seed: i, leading: skeletonLeading),
+                  ),
+              ],
+            ),
           ),
         )
       else if (error != null && items.isEmpty)
@@ -256,14 +267,10 @@ class _RangePill extends StatelessWidget {
   Future<void> _pick(BuildContext context) async {
     final MemberProfileProvider provider = context
         .read<MemberProfileProvider>();
-    final DateTimeRange? picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
+    final DateTimeRange? picked = await showCdsRangeSheet(
+      context,
+      initial: DateTimeRange(start: provider.range.from, end: provider.range.to),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      initialDateRange: DateTimeRange(
-        start: provider.range.from,
-        end: provider.range.to,
-      ),
     );
     if (picked == null) return;
     await provider.setRange(DateRange(picked.start, picked.end));
@@ -310,6 +317,7 @@ class _AttendanceTab extends StatelessWidget {
         : t.statusInOut(today!.start!, today.end!);
 
     return _SectionList<AttendanceRecord>(
+      skeletonLeading: SkeletonLeading.date,
       items: p.history.data,
       loading: p.history.loading,
       loaded: p.history.loaded,
@@ -353,6 +361,11 @@ class _AttendanceTab extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+        if (p.history.data.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: AttendanceSummaryCard(records: p.history.data),
           ),
       ],
       itemBuilder: (BuildContext context, int _, AttendanceRecord record) =>
@@ -461,6 +474,7 @@ class _TransportationTab extends StatelessWidget {
     final MemberProfileProvider p = context.watch<MemberProfileProvider>();
 
     return _SectionList<Transportation>(
+      skeletonLeading: SkeletonLeading.date,
       items: p.trips.data,
       loading: p.trips.loading,
       loaded: p.trips.loaded,

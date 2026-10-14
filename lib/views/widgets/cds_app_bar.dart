@@ -29,7 +29,7 @@ class CdsAppBar extends StatelessWidget {
             width: 34,
             child: showBack
                 ? SoftIconButton(
-                    icon: Icons.arrow_back_rounded,
+                    icon: Icons.arrow_back_ios_new_rounded,
                     tooltip: AppLocalizations.of(context).commonBack,
                     onPressed: onBack ?? () => Navigator.of(context).maybePop(),
                   )

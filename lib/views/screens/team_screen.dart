@@ -8,6 +8,7 @@ import '../../providers/team_provider.dart';
 import '../../routes/app_routes.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 
 /// §12 — "My Team": today's punch board for everyone under the manager. Tap a
 /// person for their read-only profile.
@@ -78,8 +79,9 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     if (provider.isLoading && provider.board.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.green),
+      return SkeletonList(
+        itemCount: 7,
+        itemBuilder: (_, int i) => SkeletonRow(seed: i, leading: SkeletonLeading.avatar),
       );
     }
 

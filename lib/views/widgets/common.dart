@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../models/client.dart';
+import 'skeleton.dart';
 
 /// The warm gradient backdrop every screen sits on.
 class AppBackground extends StatelessWidget {
@@ -292,40 +293,44 @@ class DateRangePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
     return GlassCard(
       onTap: onTap,
-      radius: 16,
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+      radius: 18,
+      padding: const EdgeInsetsDirectional.fromSTEB(10, 10, 10, 10),
       child: Row(
         children: <Widget>[
-          const Icon(
-            Icons.calendar_month_outlined,
-            size: 17,
-            color: AppColors.green,
+          const IconWell(icon: Icons.date_range_rounded, tone: ToneColor.green, size: 38),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(t.rangePeriod.toUpperCase(), style: AppTheme.eyebrow.copyWith(fontSize: 9)),
+                const SizedBox(height: 3),
+                Text(
+                  '$fromLabel  →  $toLabel',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.ink),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(width: 8),
-          Text(fromLabel, style: _pillText),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 6),
-            child: Text('—', style: TextStyle(color: Color(0xFFAFB6B4))),
-          ),
-          Text(toLabel, style: _pillText),
-          const Spacer(),
-          const Icon(
-            Icons.expand_more_rounded,
-            size: 16,
-            color: Color(0xFF8E9895),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: AppColors.cream,
+              borderRadius: BorderRadius.circular(11),
+              border: Border.all(color: AppColors.line),
+            ),
+            child: const Icon(Icons.tune_rounded, size: 17, color: AppColors.ink),
           ),
         ],
       ),
     );
   }
-
-  static const TextStyle _pillText = TextStyle(
-    fontSize: 11,
-    fontWeight: FontWeight.w700,
-    color: AppColors.ink,
-  );
 }
 
 /// Empty / error / loading placeholder shared by every list screen.
@@ -349,10 +354,28 @@ class StateMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
-        child: Column(
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final Widget padded = Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+          child: _content(),
+        );
+        // Inside an unbounded parent (e.g. a bare ListView) there is no
+        // height to fill or scroll within — just centre at natural size and
+        // let the ancestor scrollable handle it.
+        if (!constraints.hasBoundedHeight) return Center(child: padded);
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(child: padded),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _content() {
+    return Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             IconWell(icon: icon, tone: tone, size: 56),
@@ -399,8 +422,6 @@ class StateMessage extends StatelessWidget {
               ),
             ],
           ],
-        ),
-      ),
     );
   }
 }
@@ -605,8 +626,10 @@ class _ClientPickerSheetState extends State<ClientPickerSheet> {
             ),
             Expanded(
               child: widget.isLoading && widget.clients.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(color: AppColors.green),
+                  ? SkeletonList(
+                      itemCount: 8,
+                      padding: const EdgeInsets.fromLTRB(18, 4, 18, 24),
+                      itemBuilder: (_, int i) => SkeletonRow(seed: i, trailingPill: false),
                     )
                   : available.isEmpty
                   ? StateMessage(

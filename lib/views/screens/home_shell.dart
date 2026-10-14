@@ -15,6 +15,7 @@ import '../../services/push_service.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/common.dart';
 import 'attendance_screen.dart';
+import 'calendar_screen.dart';
 import 'dashboard_screen.dart';
 import 'profile_screen.dart';
 import 'tasks_screen.dart';
@@ -27,6 +28,7 @@ enum _HomeTab {
   attendance(Icons.schedule_rounded),
   tasks(Icons.checklist_rounded),
   team(Icons.groups_rounded),
+  calendar(Icons.calendar_month_rounded),
   profile(Icons.person_outline_rounded);
 
   const _HomeTab(this.icon);
@@ -38,6 +40,7 @@ enum _HomeTab {
     _HomeTab.attendance => t.dashboardAttendance,
     _HomeTab.tasks => t.navTasks,
     _HomeTab.team => t.teamTitle,
+    _HomeTab.calendar => t.calendarTitle,
     _HomeTab.profile => t.profileTitle,
   };
 }
@@ -144,6 +147,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       _HomeTab.home => DashboardScreen(onOpenTab: _goToTab),
       _HomeTab.attendance => const AttendanceScreen(embedded: true),
       _HomeTab.tasks => const TasksScreen(embedded: true),
+      _HomeTab.calendar => const CalendarScreen(embedded: true),
       _HomeTab.team => const TeamScreen(),
       _HomeTab.profile => const ProfileScreen(embedded: true),
     };

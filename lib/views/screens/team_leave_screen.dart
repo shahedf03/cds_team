@@ -10,7 +10,10 @@ import '../../providers/team_leave_provider.dart';
 import '../../providers/team_provider.dart';
 import '../../routes/app_routes.dart';
 import '../widgets/cds_app_bar.dart';
+import '../widgets/cds_dialogs.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
+import '../widgets/date_range_sheet.dart';
 import 'leave_screen.dart'
     show LeaveAttachmentsBadge, LeaveClientChips, showLeaveAttachments;
 
@@ -36,51 +39,32 @@ class _TeamLeaveScreenState extends State<TeamLeaveScreen> {
   Future<void> _pickRange() async {
     final TeamLeaveProvider provider = context.read<TeamLeaveProvider>();
     final DateRange? current = provider.range;
-    final DateTimeRange? picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 730)),
-      initialDateRange: current == null
-          ? null
+    final DateTime now = DateTime.now();
+    final DateTimeRange? picked = await showCdsRangeSheet(
+      context,
+      initial: current == null
+          ? DateTimeRange(start: DateTime(now.year, now.month, 1), end: DateTime(now.year, now.month + 1, 0))
           : DateTimeRange(start: current.from, end: current.to),
     );
     if (picked == null) return;
     await provider.setRange(DateRange(picked.start, picked.end));
   }
 
+  static List<String> _requestLines(LeaveRequest r) => <String>[
+        '${r.requesterLabel} · ${r.leavVacTypeName}',
+        '${r.fromDateTime}  →  ${r.toDateTime}',
+      ];
+
   Future<void> _approve(LeaveRequest request) async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        backgroundColor: AppColors.cream,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          t.teamLeaveApproveTitle,
-          style: const TextStyle(fontSize: 16),
-        ),
-        content: Text(
-          '${request.requesterLabel} · ${request.leavVacTypeName}\n'
-          '${request.fromDateTime}  →  ${request.toDateTime}',
-          style: const TextStyle(fontSize: 12, color: AppColors.muted),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              t.commonCancel,
-              style: const TextStyle(color: AppColors.muted),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.green),
-            child: Text(t.teamLeaveApprove),
-          ),
-        ],
-      ),
+    final bool confirmed = await showCdsConfirm(
+      context,
+      icon: Icons.check_circle_outline_rounded,
+      title: t.teamLeaveApproveTitle,
+      details: _requestLines(request),
+      confirmLabel: t.teamLeaveApprove,
     );
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     final (DecisionOutcome outcome, String? message) = await context
         .read<TeamLeaveProvider>()
@@ -89,9 +73,17 @@ class _TeamLeaveScreenState extends State<TeamLeaveScreen> {
   }
 
   Future<void> _reject(LeaveRequest request) async {
-    final String? reason = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) => _RejectDialog(request: request),
+    final AppLocalizations t = AppLocalizations.of(context);
+    final String? reason = await showCdsTextInput(
+      context,
+      icon: Icons.block_rounded,
+      tone: ToneColor.red,
+      title: t.teamLeaveRejectDialogTitle,
+      details: _requestLines(request),
+      hint: t.teamLeaveRejectionHint,
+      required: true,
+      requiredMessage: t.teamLeaveReasonRequired,
+      confirmLabel: t.teamLeaveReject,
     );
     if (reason == null || !mounted) return;
 
@@ -108,9 +100,15 @@ class _TeamLeaveScreenState extends State<TeamLeaveScreen> {
   }
 
   Future<void> _forward(LeaveRequest request) async {
-    final String? note = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) => _ForwardDialog(request: request),
+    final AppLocalizations t = AppLocalizations.of(context);
+    final String? note = await showCdsTextInput(
+      context,
+      icon: Icons.forward_to_inbox_outlined,
+      tone: ToneColor.blue,
+      title: t.leaveForwardTo(request.forwardToName),
+      details: _requestLines(request),
+      hint: t.leaveForwardNoteHint,
+      confirmLabel: t.leaveForwardButton,
     );
     if (note == null || !mounted) return;
 
@@ -395,8 +393,9 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     if (provider.isLoading && provider.requests.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.green),
+      return SkeletonList(
+        itemCount: 5,
+        itemBuilder: (_, int i) => SkeletonRow(seed: i, leading: SkeletonLeading.avatar, thirdLine: true),
       );
     }
 
@@ -656,148 +655,6 @@ class _TeamRequestCard extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-}
-
-/// Reject needs a reason — the employee sees it in the push and the list.
-class _RejectDialog extends StatefulWidget {
-  const _RejectDialog({required this.request});
-
-  final LeaveRequest request;
-
-  @override
-  State<_RejectDialog> createState() => _RejectDialogState();
-}
-
-class _RejectDialogState extends State<_RejectDialog> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _reason = TextEditingController();
-
-  @override
-  void dispose() {
-    _reason.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    Navigator.of(context).pop(_reason.text.trim());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    return AlertDialog(
-      backgroundColor: AppColors.cream,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text(
-        t.teamLeaveRejectDialogTitle,
-        style: const TextStyle(fontSize: 16),
-      ),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              '${widget.request.requesterLabel} · '
-              '${widget.request.leavVacTypeName}',
-              style: const TextStyle(fontSize: 12, color: AppColors.muted),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _reason,
-              autofocus: true,
-              maxLines: 3,
-              decoration: InputDecoration(hintText: t.teamLeaveRejectionHint),
-              validator: (String? v) => (v == null || v.trim().isEmpty)
-                  ? t.teamLeaveReasonRequired
-                  : null,
-            ),
-          ],
-        ),
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            t.commonCancel,
-            style: const TextStyle(color: AppColors.muted),
-          ),
-        ),
-        FilledButton(
-          onPressed: _submit,
-          style: FilledButton.styleFrom(backgroundColor: AppColors.red),
-          child: Text(t.teamLeaveReject),
-        ),
-      ],
-    );
-  }
-}
-
-/// Forward — note is optional, unlike reject's reason.
-class _ForwardDialog extends StatefulWidget {
-  const _ForwardDialog({required this.request});
-
-  final LeaveRequest request;
-
-  @override
-  State<_ForwardDialog> createState() => _ForwardDialogState();
-}
-
-class _ForwardDialogState extends State<_ForwardDialog> {
-  final TextEditingController _note = TextEditingController();
-
-  @override
-  void dispose() {
-    _note.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    return AlertDialog(
-      backgroundColor: AppColors.cream,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text(
-        t.leaveForwardTo(widget.request.forwardToName),
-        style: const TextStyle(fontSize: 16),
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            '${widget.request.requesterLabel} · '
-            '${widget.request.leavVacTypeName}',
-            style: const TextStyle(fontSize: 12, color: AppColors.muted),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _note,
-            autofocus: true,
-            maxLines: 3,
-            decoration: InputDecoration(hintText: t.leaveForwardNoteHint),
-          ),
-        ],
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            t.commonCancel,
-            style: const TextStyle(color: AppColors.muted),
-          ),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(_note.text.trim()),
-          style: FilledButton.styleFrom(backgroundColor: AppColors.blue),
-          child: Text(t.leaveForwardButton),
-        ),
-      ],
     );
   }
 }

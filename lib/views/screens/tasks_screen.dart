@@ -15,7 +15,9 @@ import '../../providers/tasks_provider.dart';
 import '../../routes/app_routes.dart';
 import '../../services/tasks_service.dart';
 import '../widgets/cds_app_bar.dart';
+import '../widgets/cds_dialogs.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 import 'task_chat_screen.dart';
 
 /// §6 — "CDS Teams Tasks", grouped by project (OSFA, CMMS, ...).
@@ -382,8 +384,10 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     if (provider.isLoading && provider.tasks.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.green),
+      return SkeletonList(
+        itemCount: 3,
+        spacing: 12,
+        itemBuilder: (_, int i) => SkeletonGroupCard(seed: i, rows: 3 - (i % 2)),
       );
     }
 
@@ -846,14 +850,7 @@ class _TaskDetailsSheetState extends State<_TaskDetailsSheet> {
                       AsyncSnapshot<List<TaskAttachment>> snapshot,
                     ) {
                       if (snapshot.connectionState != ConnectionState.done) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.green,
-                            ),
-                          ),
-                        );
+                        return const SkeletonThumbs(count: 3, size: 76);
                       }
                       final List<TaskAttachment>? items = snapshot.data;
                       if (snapshot.hasError || items == null) {
@@ -1033,36 +1030,16 @@ class _TaskDetailsSheetState extends State<_TaskDetailsSheet> {
 
   Future<void> _confirmDelete() async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        backgroundColor: AppColors.cream,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          t.tasksDeleteConfirmTitle,
-          style: const TextStyle(fontSize: 16),
-        ),
-        content: Text(
-          t.tasksDeleteConfirmMsg,
-          style: const TextStyle(fontSize: 13),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              t.commonCancel,
-              style: const TextStyle(color: AppColors.muted),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.red),
-            child: Text(t.tasksDelete),
-          ),
-        ],
-      ),
+    final bool confirmed = await showCdsConfirm(
+      context,
+      icon: Icons.delete_outline_rounded,
+      tone: ToneColor.red,
+      title: t.tasksDeleteConfirmTitle,
+      message: t.tasksDeleteConfirmMsg,
+      details: <String>[widget.task.taskTitle],
+      confirmLabel: t.tasksDelete,
     );
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     setState(() => _busy = true);
     final String? error = await context.read<TasksProvider>().delete(

@@ -7,6 +7,7 @@ import '../../models/task_item.dart';
 import '../../services/tasks_service.dart';
 import '../widgets/cds_app_bar.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 import 'tasks_screen.dart' show TaskProjectCard;
 
 /// 2026-10-08 part B — the list behind the dashboard's "منجزة هذا الشهر"
@@ -62,10 +63,10 @@ class _FinishedTasksScreenState extends State<FinishedTasksScreen> {
                           ) {
                             if (snapshot.connectionState !=
                                 ConnectionState.done) {
-                              return const Center(
-                                child: CircularProgressIndicator(
-                                  color: AppColors.green,
-                                ),
+                              return SkeletonList(
+                                itemCount: 3,
+                                spacing: 12,
+                                itemBuilder: (_, int i) => SkeletonGroupCard(seed: i),
                               );
                             }
                             if (snapshot.hasError) {

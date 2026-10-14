@@ -20,6 +20,9 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.cream,
       fontFamily: 'Roboto',
       splashFactory: InkRipple.splashFactory,
+      actionIconTheme: ActionIconThemeData(
+        backButtonIconBuilder: (BuildContext context) => const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -124,6 +127,34 @@ class AppTheme {
         ),
         entryModeIconColor: AppColors.green,
         helpTextStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.subtleText),
+        cancelButtonStyle: ButtonStyle(
+          foregroundColor: const WidgetStatePropertyAll<Color>(AppColors.subtleText),
+          textStyle: const WidgetStatePropertyAll<TextStyle>(TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+        ),
+        confirmButtonStyle: ButtonStyle(
+          foregroundColor: const WidgetStatePropertyAll<Color>(AppColors.green),
+          textStyle: const WidgetStatePropertyAll<TextStyle>(TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        barrierColor: const Color(0x8025333B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        titleTextStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.ink),
+        contentTextStyle: const TextStyle(fontSize: 12.5, height: 1.5, color: AppColors.subtleText),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.cream,
+        surfaceTintColor: Colors.transparent,
+        modalBackgroundColor: AppColors.cream,
+        modalBarrierColor: Color(0x8025333B),
+        elevation: 0,
+        modalElevation: 0,
+        dragHandleColor: Color(0xFFD3DDD9),
+        dragHandleSize: Size(38, 4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       ),
     );
   }

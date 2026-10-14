@@ -50,7 +50,10 @@ class CalendarService {
     required List<String> attendees,
   }) => _api
       .post<dynamic>('/api/calendar/events', data: _body(title, description, location, allDay, start, end, attendees))
-      .then((dynamic id) => id is int ? id : int.parse(id.toString()));
+      .then((dynamic body) {
+        final dynamic id = body is Map ? (body['id'] ?? body['eventId']) : body;
+        return id is int ? id : int.tryParse('$id') ?? 0;
+      });
 
   /// Creator only.
   Future<void> updateEvent({

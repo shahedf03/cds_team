@@ -19,13 +19,26 @@ class CalendarProvider extends ChangeNotifier with Loadable {
   CalendarData get data => _data;
   bool get teamTasks => _teamTasks;
 
-  DateTime get _gridStart {
-    final DateTime first = DateTime(_month.year, _month.month, 1);
-    // Sun–Sat grid: back up to the Sunday on/before the 1st.
-    return first.subtract(Duration(days: first.weekday % 7));
+  /// Mon–Sun grid: the Monday on/before the 1st. Calendar-day arithmetic
+  /// (not `Duration`) so a DST switch never repeats or skips a date.
+  static DateTime gridStartFor(DateTime month) {
+    final DateTime first = DateTime(month.year, month.month, 1);
+    return DateTime(first.year, first.month, 1 - (first.weekday - DateTime.monday));
   }
 
-  DateTime get _gridEnd => _gridStart.add(const Duration(days: 41));
+  /// 5 or 6 weeks — only as many rows as the month needs.
+  static int weeksFor(DateTime month) {
+    final int daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    final int leading = DateTime(month.year, month.month, 1).weekday - DateTime.monday;
+    return ((leading + daysInMonth) / 7).ceil();
+  }
+
+  DateTime get _gridStart => gridStartFor(_month);
+
+  DateTime get _gridEnd {
+    final DateTime s = _gridStart;
+    return DateTime(s.year, s.month, s.day + weeksFor(_month) * 7 - 1);
+  }
 
   Future<void> load() => guard(() async {
     _data = await _service.load(from: _gridStart, to: _gridEnd, teamTasks: _teamTasks);

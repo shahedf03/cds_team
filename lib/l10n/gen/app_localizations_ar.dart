@@ -367,6 +367,62 @@ class AppLocalizationsAr extends AppLocalizations {
   String get attendanceByMobile => 'بصمة الموبايل';
 
   @override
+  String get attendanceDaysWorked => 'أيام الدوام';
+
+  @override
+  String get attendanceOnTime => 'بالوقت';
+
+  @override
+  String get attendanceAvgHours => 'معدل الساعات';
+
+  @override
+  String get attendanceInProgress => 'قيد الدوام';
+
+  @override
+  String get attendanceNoCheckout => 'بدون خروج';
+
+  @override
+  String get attendanceSummary => 'الملخص';
+
+  @override
+  String get rangeTitle => 'اختر الفترة';
+
+  @override
+  String get rangePeriod => 'الفترة';
+
+  @override
+  String get rangeToday => 'اليوم';
+
+  @override
+  String get rangeThisWeek => 'هذا الأسبوع';
+
+  @override
+  String get rangeLast7 => 'آخر 7 أيام';
+
+  @override
+  String get rangeThisMonth => 'هذا الشهر';
+
+  @override
+  String get rangeLastMonth => 'الشهر الماضي';
+
+  @override
+  String get rangeLast30 => 'آخر 30 يوم';
+
+  @override
+  String get rangeFrom => 'من';
+
+  @override
+  String get rangeTo => 'إلى';
+
+  @override
+  String get rangeApply => 'تطبيق';
+
+  @override
+  String rangeDays(int count) {
+    return '$count يوم';
+  }
+
+  @override
   String get tasksTitle => 'مهامي';
 
   @override
@@ -527,6 +583,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chatRemoveFile => 'إزالة';
 
   @override
+  String get chatYesterday => 'أمس';
+
+  @override
+  String get chatCopied => 'تم نسخ الرسالة';
+
+  @override
   String get projectsTitle => 'المشاريع';
 
   @override
@@ -607,6 +669,32 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get calendarPeople => 'الأشخاص';
+
+  @override
+  String get calendarSave => 'حفظ الحدث';
+
+  @override
+  String get calendarTitleRequired => 'أدخل عنواناً للحدث';
+
+  @override
+  String get calendarEndBeforeStart => 'يجب أن يكون الانتهاء بعد البداية';
+
+  @override
+  String get calendarSearchPeople => 'ابحث عن شخص';
+
+  @override
+  String calendarSelectedCount(int count) {
+    return '$count محدد';
+  }
+
+  @override
+  String get calendarToday => 'اليوم';
+
+  @override
+  String get calendarEventSaved => 'تم حفظ الحدث';
+
+  @override
+  String get calendarDeleteTitle => 'حذف هذا الحدث؟';
 
   @override
   String get notificationsTitle => 'الإشعارات';

@@ -10,6 +10,7 @@ import '../../models/system_code.dart';
 import '../../models/transportation.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/leave_provider.dart';
+import '../widgets/cds_dialogs.dart';
 import '../widgets/common.dart';
 
 /// What the sheet pops after a successful submit: the new request's id (from
@@ -415,51 +416,23 @@ class _LeaveEditorSheetState extends State<LeaveEditorSheet> {
 
   Future<bool> _confirmDespiteConflicts(List<LeaveConflict> conflicts) async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final bool? proceed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        backgroundColor: AppColors.cream,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          t.leaveEditorConflictsTitle,
-          style: const TextStyle(fontSize: 16),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: conflicts
-              .map(
-                (LeaveConflict c) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Text(
-                    t.leaveEditorConflictLine(
-                      c.userName.isEmpty ? c.userId : c.userName,
-                      c.fromDateTime,
-                      c.toDateTime,
-                    ),
-                    style: const TextStyle(fontSize: 12, color: AppColors.ink),
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              t.commonBack,
-              style: const TextStyle(color: AppColors.muted),
+    return showCdsConfirm(
+      context,
+      icon: Icons.groups_2_outlined,
+      tone: ToneColor.amber,
+      title: t.leaveEditorConflictsTitle,
+      details: conflicts
+          .map(
+            (LeaveConflict c) => t.leaveEditorConflictLine(
+              c.userName.isEmpty ? c.userId : c.userName,
+              c.fromDateTime,
+              c.toDateTime,
             ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.green),
-            child: Text(t.leaveEditorSubmitAnyway),
-          ),
-        ],
-      ),
+          )
+          .toList(),
+      cancelLabel: t.commonBack,
+      confirmLabel: t.leaveEditorSubmitAnyway,
     );
-    return proceed ?? false;
   }
 
   String _formatMoment(DateTime value) => _kind == LeaveKind.leaving

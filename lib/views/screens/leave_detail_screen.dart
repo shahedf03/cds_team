@@ -10,7 +10,9 @@ import '../../providers/leave_provider.dart';
 import '../../providers/team_leave_provider.dart';
 import '../../services/leave_service.dart';
 import '../widgets/cds_app_bar.dart';
+import '../widgets/cds_dialogs.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 import 'leave_screen.dart' show LeaveAttachmentsBadge, LeaveClientChips;
 
 /// 2026-10-07 — one leave/leaving request: fields, status, "بانتظار: …",
@@ -113,15 +115,15 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen> {
 
   Future<void> _reject() async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final String? reason = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) => _ReasonDialog(
-        title: t.teamLeaveRejectDialogTitle,
-        hint: t.teamLeaveRejectionHint,
-        requireText: true,
-        confirmLabel: t.teamLeaveReject,
-        confirmColor: AppColors.red,
-      ),
+    final String? reason = await showCdsTextInput(
+      context,
+      icon: Icons.block_rounded,
+      tone: ToneColor.red,
+      title: t.teamLeaveRejectDialogTitle,
+      hint: t.teamLeaveRejectionHint,
+      required: true,
+      requiredMessage: t.teamLeaveReasonRequired,
+      confirmLabel: t.teamLeaveReject,
     );
     if (reason == null || !mounted) return;
     await _run(
@@ -133,15 +135,13 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen> {
   Future<void> _forward() async {
     final AppLocalizations t = AppLocalizations.of(context);
     final String toName = _detail?.request.forwardToName ?? '';
-    final String? note = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) => _ReasonDialog(
-        title: t.leaveForwardTo(toName),
-        hint: t.leaveForwardNoteHint,
-        requireText: false,
-        confirmLabel: t.leaveForwardButton,
-        confirmColor: AppColors.blue,
-      ),
+    final String? note = await showCdsTextInput(
+      context,
+      icon: Icons.forward_to_inbox_outlined,
+      tone: ToneColor.blue,
+      title: t.leaveForwardTo(toName),
+      hint: t.leaveForwardNoteHint,
+      confirmLabel: t.leaveForwardButton,
     );
     if (note == null || !mounted) return;
     await _run(
@@ -155,32 +155,15 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen> {
 
   Future<void> _withdraw() async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        backgroundColor: AppColors.cream,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          t.leaveWithdrawConfirmTitle,
-          style: const TextStyle(fontSize: 16),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              t.leaveKeep,
-              style: const TextStyle(color: AppColors.muted),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.red),
-            child: Text(t.leaveWithdraw),
-          ),
-        ],
-      ),
+    final bool confirmed = await showCdsConfirm(
+      context,
+      icon: Icons.undo_rounded,
+      tone: ToneColor.red,
+      title: t.leaveWithdrawConfirmTitle,
+      cancelLabel: t.leaveKeep,
+      confirmLabel: t.leaveWithdraw,
     );
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     setState(() => _busy = true);
     try {
@@ -224,11 +207,7 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen> {
   }
 
   Widget _body(BuildContext context, AppLocalizations t) {
-    if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.green),
-      );
-    }
+    if (_loading) return const SkeletonDetail(avatar: true);
     if (_error != null || _detail == null) {
       return ListView(
         children: <Widget>[
@@ -438,82 +417,6 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen> {
             ),
           ],
         ],
-      ],
-    );
-  }
-}
-
-/// Shared by Reject (reason required) and Forward (note optional).
-class _ReasonDialog extends StatefulWidget {
-  const _ReasonDialog({
-    required this.title,
-    required this.hint,
-    required this.requireText,
-    required this.confirmLabel,
-    required this.confirmColor,
-  });
-
-  final String title;
-  final String hint;
-  final bool requireText;
-  final String confirmLabel;
-  final Color confirmColor;
-
-  @override
-  State<_ReasonDialog> createState() => _ReasonDialogState();
-}
-
-class _ReasonDialogState extends State<_ReasonDialog> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _text = TextEditingController();
-
-  @override
-  void dispose() {
-    _text.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    if (widget.requireText && !(_formKey.currentState?.validate() ?? false)) {
-      return;
-    }
-    Navigator.of(context).pop(_text.text.trim());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    return AlertDialog(
-      backgroundColor: AppColors.cream,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text(widget.title, style: const TextStyle(fontSize: 16)),
-      content: Form(
-        key: _formKey,
-        child: TextFormField(
-          controller: _text,
-          autofocus: true,
-          maxLines: 3,
-          decoration: InputDecoration(hintText: widget.hint),
-          validator: widget.requireText
-              ? (String? v) => (v == null || v.trim().isEmpty)
-                    ? t.teamLeaveReasonRequired
-                    : null
-              : null,
-        ),
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            t.commonCancel,
-            style: const TextStyle(color: AppColors.muted),
-          ),
-        ),
-        FilledButton(
-          onPressed: _submit,
-          style: FilledButton.styleFrom(backgroundColor: widget.confirmColor),
-          child: Text(widget.confirmLabel),
-        ),
       ],
     );
   }

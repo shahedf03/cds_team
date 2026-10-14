@@ -10,6 +10,7 @@ import '../../services/projects_service.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/cds_app_bar.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 import 'tasks_screen.dart' show showTaskDetails;
 
 /// 2026-10-08 part D — projects split into sprints. Read-only: creating,
@@ -58,7 +59,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       future: _future,
                       builder: (BuildContext context, AsyncSnapshot<List<ProjectSummary>> snap) {
                         if (snap.connectionState != ConnectionState.done) {
-                          return const Center(child: CircularProgressIndicator(color: AppColors.green));
+                          return SkeletonList(
+                            itemCount: 4,
+                            spacing: 12,
+                            itemBuilder: (_, int i) => SkeletonGroupCard(seed: i, rows: 2),
+                          );
                         }
                         if (snap.hasError) {
                           return ListView(
@@ -277,7 +282,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                       future: _future,
                       builder: (BuildContext context, AsyncSnapshot<ProjectDetail> snap) {
                         if (snap.connectionState != ConnectionState.done) {
-                          return const Center(child: CircularProgressIndicator(color: AppColors.green));
+                          return SkeletonList(
+                            itemCount: 3,
+                            spacing: 12,
+                            itemBuilder: (_, int i) => SkeletonGroupCard(seed: i + 1),
+                          );
                         }
                         if (snap.hasError) {
                           return ListView(

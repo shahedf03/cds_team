@@ -12,6 +12,7 @@ import '../../routes/app_routes.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/check_in_card.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
 
 /// Home tab (2026-10-05) — the whole screen from one call,
 /// `GET /api/dashboard`. Layout matches the Portal's home page: header,
@@ -50,12 +51,7 @@ class DashboardScreen extends StatelessWidget {
           const CheckInCard(),
           const SizedBox(height: 20),
           if (dashboard.isLoading && data == null)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 60),
-              child: Center(
-                child: CircularProgressIndicator(color: AppColors.green),
-              ),
-            )
+            const SkeletonDashboard()
           else if (dashboard.hasError && data == null)
             StateMessage(
               icon: Icons.cloud_off_rounded,

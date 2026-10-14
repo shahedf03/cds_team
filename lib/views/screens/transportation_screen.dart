@@ -12,7 +12,10 @@ import '../../providers/loadable.dart';
 import '../../providers/transportation_provider.dart';
 import '../../routes/app_routes.dart';
 import '../widgets/cds_app_bar.dart';
+import '../widgets/cds_dialogs.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
+import '../widgets/date_range_sheet.dart';
 
 /// §4 — list of daily transactions. Create/edit happens in
 /// [TransportationEditorScreen]; delete calls the DELETE endpoint.
@@ -47,14 +50,10 @@ class _TransportationScreenState extends State<TransportationScreen> {
     final AuthProvider auth = context.read<AuthProvider>();
     if (auth.user == null) return;
 
-    final DateTimeRange? picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
+    final DateTimeRange? picked = await showCdsRangeSheet(
+      context,
+      initial: DateTimeRange(start: provider.range.from, end: provider.range.to),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      initialDateRange: DateTimeRange(
-        start: provider.range.from,
-        end: provider.range.to,
-      ),
     );
     if (picked == null) return;
 
@@ -106,34 +105,16 @@ class _TransportationScreenState extends State<TransportationScreen> {
 
   Future<void> _confirmDelete(Transportation entry) async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        backgroundColor: AppColors.cream,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(t.transportationDeleteTitle, style: const TextStyle(fontSize: 16)),
-        content: Text(
-          '${entry.dateLabel} · ${entry.km} km',
-          style: const TextStyle(fontSize: 12, color: AppColors.muted),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              t.commonCancel,
-              style: const TextStyle(color: AppColors.muted),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.red),
-            child: Text(t.transportationDelete),
-          ),
-        ],
-      ),
+    final bool confirmed = await showCdsConfirm(
+      context,
+      icon: Icons.delete_outline_rounded,
+      tone: ToneColor.red,
+      title: t.transportationDeleteTitle,
+      details: <String>['${entry.dateLabel} · ${entry.km} km'],
+      confirmLabel: t.transportationDelete,
     );
 
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     final TransportationProvider provider = context
         .read<TransportationProvider>();
@@ -362,8 +343,9 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     if (provider.isLoading && provider.entries.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.green),
+      return SkeletonList(
+        itemCount: 6,
+        itemBuilder: (_, int i) => SkeletonRow(seed: i, leading: SkeletonLeading.date),
       );
     }
 

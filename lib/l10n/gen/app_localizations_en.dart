@@ -365,6 +365,68 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attendanceByMobile => 'By Mobile';
 
   @override
+  String get attendanceDaysWorked => 'Days';
+
+  @override
+  String get attendanceOnTime => 'On time';
+
+  @override
+  String get attendanceAvgHours => 'Avg. hours';
+
+  @override
+  String get attendanceInProgress => 'In progress';
+
+  @override
+  String get attendanceNoCheckout => 'No check-out';
+
+  @override
+  String get attendanceSummary => 'Summary';
+
+  @override
+  String get rangeTitle => 'Select period';
+
+  @override
+  String get rangePeriod => 'Period';
+
+  @override
+  String get rangeToday => 'Today';
+
+  @override
+  String get rangeThisWeek => 'This week';
+
+  @override
+  String get rangeLast7 => 'Last 7 days';
+
+  @override
+  String get rangeThisMonth => 'This month';
+
+  @override
+  String get rangeLastMonth => 'Last month';
+
+  @override
+  String get rangeLast30 => 'Last 30 days';
+
+  @override
+  String get rangeFrom => 'From';
+
+  @override
+  String get rangeTo => 'To';
+
+  @override
+  String get rangeApply => 'Apply';
+
+  @override
+  String rangeDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'days',
+      one: 'day',
+    );
+    return '$count $_temp0';
+  }
+
+  @override
   String get tasksTitle => 'My tasks';
 
   @override
@@ -525,6 +587,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatRemoveFile => 'Remove';
 
   @override
+  String get chatYesterday => 'Yesterday';
+
+  @override
+  String get chatCopied => 'Message copied';
+
+  @override
   String get projectsTitle => 'Projects';
 
   @override
@@ -604,6 +672,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarPeople => 'People';
+
+  @override
+  String get calendarSave => 'Save event';
+
+  @override
+  String get calendarTitleRequired => 'Give the event a title';
+
+  @override
+  String get calendarEndBeforeStart => 'End must be after start';
+
+  @override
+  String get calendarSearchPeople => 'Search people';
+
+  @override
+  String calendarSelectedCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get calendarToday => 'Today';
+
+  @override
+  String get calendarEventSaved => 'Event saved';
+
+  @override
+  String get calendarDeleteTitle => 'Delete this event?';
 
   @override
   String get notificationsTitle => 'Notifications';

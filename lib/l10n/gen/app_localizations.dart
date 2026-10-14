@@ -704,6 +704,114 @@ abstract class AppLocalizations {
   /// **'By Mobile'**
   String get attendanceByMobile;
 
+  /// No description provided for @attendanceDaysWorked.
+  ///
+  /// In en, this message translates to:
+  /// **'Days'**
+  String get attendanceDaysWorked;
+
+  /// No description provided for @attendanceOnTime.
+  ///
+  /// In en, this message translates to:
+  /// **'On time'**
+  String get attendanceOnTime;
+
+  /// No description provided for @attendanceAvgHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg. hours'**
+  String get attendanceAvgHours;
+
+  /// No description provided for @attendanceInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get attendanceInProgress;
+
+  /// No description provided for @attendanceNoCheckout.
+  ///
+  /// In en, this message translates to:
+  /// **'No check-out'**
+  String get attendanceNoCheckout;
+
+  /// No description provided for @attendanceSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get attendanceSummary;
+
+  /// No description provided for @rangeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select period'**
+  String get rangeTitle;
+
+  /// No description provided for @rangePeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Period'**
+  String get rangePeriod;
+
+  /// No description provided for @rangeToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get rangeToday;
+
+  /// No description provided for @rangeThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get rangeThisWeek;
+
+  /// No description provided for @rangeLast7.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 days'**
+  String get rangeLast7;
+
+  /// No description provided for @rangeThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This month'**
+  String get rangeThisMonth;
+
+  /// No description provided for @rangeLastMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Last month'**
+  String get rangeLastMonth;
+
+  /// No description provided for @rangeLast30.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 30 days'**
+  String get rangeLast30;
+
+  /// No description provided for @rangeFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get rangeFrom;
+
+  /// No description provided for @rangeTo.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get rangeTo;
+
+  /// No description provided for @rangeApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get rangeApply;
+
+  /// No description provided for @rangeDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} {count, plural, one{day} other{days}}'**
+  String rangeDays(int count);
+
   /// No description provided for @tasksTitle.
   ///
   /// In en, this message translates to:
@@ -974,6 +1082,18 @@ abstract class AppLocalizations {
   /// **'Remove'**
   String get chatRemoveFile;
 
+  /// No description provided for @chatYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get chatYesterday;
+
+  /// No description provided for @chatCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Message copied'**
+  String get chatCopied;
+
   /// No description provided for @projectsTitle.
   ///
   /// In en, this message translates to:
@@ -1117,6 +1237,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'People'**
   String get calendarPeople;
+
+  /// No description provided for @calendarSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save event'**
+  String get calendarSave;
+
+  /// No description provided for @calendarTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the event a title'**
+  String get calendarTitleRequired;
+
+  /// No description provided for @calendarEndBeforeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'End must be after start'**
+  String get calendarEndBeforeStart;
+
+  /// No description provided for @calendarSearchPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'Search people'**
+  String get calendarSearchPeople;
+
+  /// No description provided for @calendarSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String calendarSelectedCount(int count);
+
+  /// No description provided for @calendarToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get calendarToday;
+
+  /// No description provided for @calendarEventSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Event saved'**
+  String get calendarEventSaved;
+
+  /// No description provided for @calendarDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this event?'**
+  String get calendarDeleteTitle;
 
   /// No description provided for @notificationsTitle.
   ///

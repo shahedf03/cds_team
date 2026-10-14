@@ -16,7 +16,10 @@ import '../../providers/loadable.dart';
 import '../../routes/app_routes.dart';
 import '../../services/leave_service.dart';
 import '../widgets/cds_app_bar.dart';
+import '../widgets/cds_dialogs.dart';
 import '../widgets/common.dart';
+import '../widgets/skeleton.dart';
+import '../widgets/date_range_sheet.dart';
 import 'leave_editor_sheet.dart';
 
 /// §9 — Leaving/Vacation segmented control, request list, delete.
@@ -52,38 +55,22 @@ class _LeaveScreenState extends State<LeaveScreen> {
   /// Medical report for a sick-leave request: camera or gallery → base64.
   Future<void> _attachReport(String transNo) async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final ImageSource? source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      backgroundColor: AppColors.cream,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-      ),
-      builder: (BuildContext context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: const Icon(
-                  Icons.photo_camera_outlined,
-                  color: AppColors.ink,
-                ),
-                title: Text(t.leaveTakePhoto),
-                onTap: () => Navigator.of(context).pop(ImageSource.camera),
-              ),
-              ListTile(
-                leading: const Icon(
-                  Icons.photo_library_outlined,
-                  color: AppColors.ink,
-                ),
-                title: Text(t.leaveChooseFromGallery),
-                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
-              ),
-            ],
-          ),
+    final ImageSource? source = await showCdsOptionsSheet<ImageSource>(
+      context,
+      title: t.leaveAttachMedicalTitle,
+      options: <CdsSheetOption<ImageSource>>[
+        CdsSheetOption<ImageSource>(
+          value: ImageSource.camera,
+          icon: Icons.photo_camera_outlined,
+          label: t.leaveTakePhoto,
         ),
-      ),
+        CdsSheetOption<ImageSource>(
+          value: ImageSource.gallery,
+          icon: Icons.photo_library_outlined,
+          tone: ToneColor.blue,
+          label: t.leaveChooseFromGallery,
+        ),
+      ],
     );
     if (source == null) return;
 
@@ -123,14 +110,9 @@ class _LeaveScreenState extends State<LeaveScreen> {
     final AuthProvider auth = context.read<AuthProvider>();
     if (auth.user == null) return;
 
-    final DateTimeRange? picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 730)),
-      initialDateRange: DateTimeRange(
-        start: provider.range.from,
-        end: provider.range.to,
-      ),
+    final DateTimeRange? picked = await showCdsRangeSheet(
+      context,
+      initial: DateTimeRange(start: provider.range.from, end: provider.range.to),
     );
     if (picked == null) return;
 
@@ -170,71 +152,30 @@ class _LeaveScreenState extends State<LeaveScreen> {
 
   Future<bool> _offerAttachNow() async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final bool? attach = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        backgroundColor: AppColors.cream,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          t.leaveAttachMedicalTitle,
-          style: const TextStyle(fontSize: 16),
-        ),
-        content: Text(
-          t.leaveAttachLaterMsg,
-          style: const TextStyle(fontSize: 12, color: AppColors.muted),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              t.leaveLater,
-              style: const TextStyle(color: AppColors.muted),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.green),
-            child: Text(t.leaveAttachNow),
-          ),
-        ],
-      ),
+    return showCdsConfirm(
+      context,
+      icon: Icons.medical_information_outlined,
+      tone: ToneColor.blue,
+      title: t.leaveAttachMedicalTitle,
+      message: t.leaveAttachLaterMsg,
+      cancelLabel: t.leaveLater,
+      confirmLabel: t.leaveAttachNow,
     );
-    return attach ?? false;
   }
 
   Future<void> _confirmDelete(LeaveRequest request) async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        backgroundColor: AppColors.cream,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          t.leaveCancelRequestTitle,
-          style: const TextStyle(fontSize: 16),
-        ),
-        content: Text(
-          '${request.leavVacTypeName} · ${request.fromDateTime}',
-          style: const TextStyle(fontSize: 12, color: AppColors.muted),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              t.leaveKeep,
-              style: const TextStyle(color: AppColors.muted),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.red),
-            child: Text(t.leaveCancelRequest),
-          ),
-        ],
-      ),
+    final bool confirmed = await showCdsConfirm(
+      context,
+      icon: Icons.event_busy_outlined,
+      tone: ToneColor.red,
+      title: t.leaveCancelRequestTitle,
+      details: <String>[request.leavVacTypeName, request.fromDateTime],
+      cancelLabel: t.leaveKeep,
+      confirmLabel: t.leaveCancelRequest,
     );
 
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     final LeaveProvider provider = context.read<LeaveProvider>();
     final bool ok = await provider.delete(request.transNo);
@@ -386,8 +327,9 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     if (provider.isLoading && provider.requests.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.green),
+      return SkeletonList(
+        itemCount: 5,
+        itemBuilder: (_, int i) => SkeletonRow(seed: i, thirdLine: true),
       );
     }
 
@@ -765,12 +707,8 @@ class _AttachmentsSheetState extends State<_AttachmentsSheet> {
                   ) {
                     if (snapshot.connectionState != ConnectionState.done) {
                       return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 40),
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.green,
-                          ),
-                        ),
+                        padding: EdgeInsets.only(bottom: 10),
+                        child: SkeletonThumbs(),
                       );
                     }
                     final List<LeaveAttachment>? items = snapshot.data;
